@@ -1,0 +1,83 @@
+import json
+import urllib.request
+import urllib.error
+import socket
+from config import PROVIDERS
+
+# Maksymalny czas oczekiwania na odpowiedź API (w sekundach)
+REQUEST_TIMEOUT = 30
+
+class APIClient:
+    def __init__(self, provider_name="cloudflare"):
+        if provider_name not in PROVIDERS:
+            raise ValueError(f"Nieznany provider: {provider_name}")
+            
+        self.config = PROVIDERS[provider_name]
+        self.url = self.config["url"]
+        self.api_key = self.config["api_key"]
+        self.model = self.config["default_model"]
+
+    def set_model(self, model_name):
+        self.model = model_name
+
+    def chat_completion(self, messages):
+        """Wysyła zapytanie do API wybranego providera."""
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.api_key}",
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Chrome/124.0.0.0 Safari/537.36"
+        }
+        
+        data = {
+            "model": self.model,
+            "messages": messages
+        }
+        
+        req = urllib.request.Request(
+            self.url,
+            data=json.dumps(data).encode("utf-8"),
+            headers=headers,
+            method="POST"
+        )
+        
+        try:
+            # Próba w pełni zabezpieczonego nawiązania połączenia szyfrowanego (domyślna dla np. Debiana)
+            with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as response:
+                result = json.loads(response.read().decode("utf-8"))
+                return result
+                
+        except socket.timeout:
+            return {"error": f"Przekroczono limit czasu oczekiwania ({REQUEST_TIMEOUT}s). Sprawdź połączenie z internetem lub zwiększ REQUEST_TIMEOUT w client.py."}
+                
+        except urllib.error.HTTPError as e:
+            # Kiedy występuje błąd HTTP (np. 401, 500) od strony serwera, po nawiązaniu TCP
+            error_body = e.read().decode("utf-8")
+            return {"error": f"Błąd HTTP {e.code}: {e.reason}\nSzczegóły: {error_body}"}
+            
+        except urllib.error.URLError as e:
+            # Ten blok aktywuje się gdy system (np Mac) blokuje handshake przez certyfikaty
+            if "CERTIFICATE_VERIFY_FAILED" in str(e.reason):
+                from ui import Colors
+                print(f"\n{Colors.YELLOW}{Colors.BOLD}⚠️ OSTRZEŻENIE: CERTIFICATE_VERIFY_FAILED{Colors.ENDC}")
+                print(f"{Colors.YELLOW}Twój system zablokował dostęp ze względu na brak ważnych certyfikatów.{Colors.ENDC}")
+                print(f"{Colors.YELLOW}Włączono ratunkowe obejście weryfikacji SSL! Z tego powodu Twoje połączenie{Colors.ENDC}")
+                print(f"{Colors.YELLOW}od tej chwili nie jest weryfikowane, co oznacza potencjalną podatność{Colors.ENDC}")
+                print(f"{Colors.YELLOW}na nasłuch w sieci publicznej (MITM). Zalecamy aktualizację systemu.{Colors.ENDC}\n")
+                
+                import ssl
+                ctx = ssl.create_default_context()
+                ctx.check_hostname = False
+                ctx.verify_mode = ssl.CERT_NONE
+                try:
+                    with urllib.request.urlopen(req, context=ctx, timeout=REQUEST_TIMEOUT) as response:
+                        result = json.loads(response.read().decode("utf-8"))
+                        return result
+                except socket.timeout:
+                    return {"error": f"Przekroczono limit czasu oczekiwania ({REQUEST_TIMEOUT}s). Sprawdź połączenie lub zwiększ REQUEST_TIMEOUT w client.py."}
+                except urllib.error.HTTPError as he:
+                    return {"error": f"Błąd HTTP {he.code}: {he.reason}\nSzczegóły: {he.read().decode('utf-8')}"}
+                except Exception as inner_e:
+                    return {"error": str(inner_e)}
+            return {"error": str(e)}
+        except Exception as e:
+            return {"error": str(e)}
