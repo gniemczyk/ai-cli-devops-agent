@@ -91,3 +91,7 @@ Zastosowane mechanizmy nadzoru sprzętowego:
 - Zanim interpreter prześle polecenie niżej, system **każdorazowo poprosi użytkownika o jawną zgodę** `(T/n)`, zapewniając 100% monitoringu nad egzekutorem.
 - Moduł pozwala po przetworzonym żądaniu, przekazać wyrzut strumieni na podwójny tor. Decyzja `Y/N` wysyła odpowiedź `stdout` / `stderr` terminala z powrotem do podsieci powłoki agenta w celu dogłębnej analityki i streszczenia, bądź rzuca surowe logi operacji precyzyjnie prosto na widok powłoki. 
 - Rozdzielona pętla redukuje do absolutnego zera zużycie tokenów i opóźnienia sprzętowe API dla znanych i pożądanych logów systemowych.
+---
+
+**Autor:** Grzegorz N  
+**Data:** Marzec 2026
