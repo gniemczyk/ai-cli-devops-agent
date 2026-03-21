@@ -11,7 +11,7 @@ DEFAULT_PROVIDER = "cloudflare"
 DEFAULT_MODEL = "workers-ai/@cf/meta/llama-4-scout-17b-16e-instruct"
 
 # Adres Cloudflare AI Gateway (podmień jeśli Cloudflare zmieni strukturę endpointu)
-# Numer konta ({CF_NR_ACCOOUNT}) wczytywany jest automatycznie z pliku .env
+# Numer konta ({CF_NR_ACCOUNT}) wczytywany jest automatycznie z pliku .env
 CF_GATEWAY_URL_TEMPLATE = "https://gateway.ai.cloudflare.com/v1/{account}/ai-gateway-model-ai/compat"
 
 
@@ -42,10 +42,10 @@ load_env(os.path.join(BASE_DIR, ".env"))
 
 # Pobranie wrażliwych danych z środowiska
 CF_API_TOKEN   = os.environ.get("CF_API_TOKEN", "")
-CF_NR_ACCOOUNT = os.environ.get("CF_NR_ACCOOUNT", "")
+CF_NR_ACCOUNT = os.environ.get("CF_NR_ACCOUNT", "")
 
 # Budowanie pełnego adresu Cloudflare Gateway
-CF_GATEWAY_URL = CF_GATEWAY_URL_TEMPLATE.format(account=CF_NR_ACCOOUNT)
+CF_GATEWAY_URL = CF_GATEWAY_URL_TEMPLATE.format(account=CF_NR_ACCOUNT)
 
 # Słownik dostawców
 PROVIDERS = {

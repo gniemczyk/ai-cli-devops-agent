@@ -29,7 +29,7 @@ W katalogu docelowym projektu utworzono pomocniczy ekosystem:
 Instrukcja dodawania klucza API i numeru konta:
 1. Skopiuj wzór z `.env.example` do nowego ukrytego pliku `.env`.
 2. Zmodyfikuj frazę `TUTAJ_WKLEJ_SWOJ_TOKEN` wprowadzając docelowy wygenerowany token Cloudflare.
-3. Podmień wartość `CF_NR_ACCOOUNT` wstawiając swój kod konta Cloudflare (ID konta wyświetlane m.in. w url endpointu API).
+3. Podmień wartość `CF_NR_ACCOUNT` wstawiając swój kod konta Cloudflare (ID konta wyświetlane m.in. w url endpointu API).
 4. Zapisz plik.
 
 **3. Uruchamianie Agenta**
@@ -56,7 +56,7 @@ Projekt posiada wbudowaną obsługę czterech dostawców API. Aktywnego dostawc�
 
 | Dostawca | Wartość w `config.py` | Klucz w `.env` | Default model |
 |---|---|---|---|
-| Cloudflare AI *(domyślny)* | `"cloudflare"` | `CF_API_TOKEN` + `CF_NR_ACCOOUNT` | llama-4-scout |
+| Cloudflare AI *(domyślny)* | `"cloudflare"` | `CF_API_TOKEN` + `CF_NR_ACCOUNT` | llama-4-scout |
 | OpenAI | `"openai"` | `OPENAI_API_KEY` | gpt-4o |
 | Anthropic | `"anthropic"` | `ANTHROPIC_API_KEY` | claude-3-5-sonnet |
 | Google Gemini | `"gemini"` | `GEMINI_API_KEY` | gemini-2.0-flash |
