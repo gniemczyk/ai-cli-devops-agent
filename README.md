@@ -50,6 +50,27 @@ Aplikacja podejmuje domyślne, silne próby egzekwowania pełnego szyfrowania za
     sudo apt update && sudo apt install ca-certificates
     ```
 
+## 🔌 Dostawcy AI (Providers)
+
+Projekt posiada wbudowaną obsługę czterech dostawców API. Aktywnego dostawcę wybierasz zmieniając wartość `DEFAULT_PROVIDER` w pliku `config.py`:
+
+| Dostawca | Wartość w `config.py` | Klucz w `.env` | Default model |
+|---|---|---|---|
+| Cloudflare AI *(domyślny)* | `"cloudflare"` | `CF_API_TOKEN` + `CF_NR_ACCOOUNT` | llama-4-scout |
+| OpenAI | `"openai"` | `OPENAI_API_KEY` | gpt-4o |
+| Anthropic | `"anthropic"` | `ANTHROPIC_API_KEY` | claude-3-5-sonnet |
+| Google Gemini | `"gemini"` | `GEMINI_API_KEY` | gemini-2.0-flash |
+
+Aby dodać **własnego dostawcę** zgodnego z OpenAI API, wystarczy dopisać nowy wpis do słownika `PROVIDERS` w `config.py`:
+```python
+"moj_provider": {
+    "url": "https://adres-api.przykład.com/v1/chat/completions",
+    "api_key": os.environ.get("MOJ_API_KEY", ""),
+    "default_model": "nazwa-modelu"
+}
+```
+Następnie ustaw `DEFAULT_PROVIDER = "moj_provider"` i dodaj klucz do pliku `.env`.
+
 ## ⌨️ Funkcje czatu i Narzędzia (Rozszerzenia)
 
 Projekt udostępnia szereg wbudowanych narzędzi ułatwiających analizę usterek i usprawniających pracę z systemem docelowym. Wystarczy uruchomić program z odpowiednią flagą:
