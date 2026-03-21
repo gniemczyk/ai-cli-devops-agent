@@ -2,7 +2,7 @@
 
 Lekki, interaktywny agent konsolowy (CLI) napisany w czystym języku Python **bez zewnętrznych zależności** (brak konieczności używania `pip`). Zapewnia łatwą w integracji architekturę do bezpiecznej komunikacji z chmurowymi modelami LLM. Domyślnie wykorzystuje interfejs OpenAI API udostępniany w usłudze Cloudflare AI Gateway.
 
-> 💡 **Darmowy limit Cloudflare AI:** Cloudflare oferuje na darmowym koncie bezpłatny budżet wynoszący **10 000 Neurons dziennie**. Należy pamiętać, że *Neurons* są kalkulowane inaczej niż klasyczne tokeny. Jeśli limit dzienny zostanie wyczerpany na darmowym planie, API po prostu zwróci błąd limitu i **Cloudflare nie pobierze żadnych dodatkowych opłat**.
+> 💡 **Darmowy limit Cloudflare AI:** Cloudflare oferuje na darmowym koncie bezpłatny budżet wynoszący **10k Neurons dziennie**. Należy pamiętać, że *Neurons* są kalkulowane inaczej niż klasyczne tokeny. Jeśli limit dzienny zostanie wyczerpany na darmowym planie, API po prostu zwróci błąd limitu i **Cloudflare nie pobierze żadnych dodatkowych opłat**.
 
 
 ## 🛠 Struktura Projektu
