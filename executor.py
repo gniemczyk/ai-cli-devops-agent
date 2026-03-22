@@ -41,14 +41,38 @@ def handle_agent_commands(agent_reply, messages, client):
                 break
         
         if choice in ['', 't', 'y', 'tak', 'yes']:
-            print(f"Uruchamiam podproces w środowisku...")
+            timeout_sec = 10
+            print(f"Uruchamiam podproces (limit {timeout_sec}s, czekaj...)...")
+            timed_out = False
             try:
-                res = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+                res = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=timeout_sec)
                 out_payload = res.stdout + res.stderr
+            except subprocess.TimeoutExpired as te:
+                timed_out = True
                 
+                # Przechwyć to co się udało zebrać, dbając o typ danych (str vs bytes)
+                raw_stdout = te.stdout if te.stdout is not None else ""
+                raw_stderr = te.stderr if te.stderr is not None else ""
+                
+                if isinstance(raw_stdout, bytes):
+                    raw_stdout = raw_stdout.decode(errors="replace")
+                if isinstance(raw_stderr, bytes):
+                    raw_stderr = raw_stderr.decode(errors="replace")
+                    
+                out_payload = raw_stdout + raw_stderr
+                print(f"{Colors.YELLOW}⏱️  Polecenie przekroczyło limit {timeout_sec}s i zostało zatrzymane.{Colors.ENDC}")
+            except Exception as e:
+                print(f"{Colors.RED}Błąd API Pythona uderzający poleceniem: {e}{Colors.ENDC}")
+                auto_prompt = f"Polecenie `{cmd}` zakończyło się błędem środowiska: {e}"
+                break
+
+            try:
                 if not out_payload.strip():
                     out_payload = "[Polecenie zakończyło się cichym sukcesem. Brak wyjścia stdout.]"
-                    
+
+                if timed_out:
+                    out_payload += f"\n\n[UWAGA: Polecenie zostało przerwane po {timeout_sec}s limitu czasu. Powyżej znajduje się częściowy wynik.]"
+
                 choice_analysis = input(f"{Colors.YELLOW}Czy przekazać ten wynik do Agenta na analizę? [T/n]: {Colors.ENDC}").strip().lower()
 
                 if len(out_payload) > 15000:
@@ -64,7 +88,6 @@ def handle_agent_commands(agent_reply, messages, client):
                     
                     messages.append({"role": "user", "content": f"Uruchomiono wynik komendy systemowej `{cmd}`:\n```\n{out_payload}\n```\nTylko odnotuj to w pamięci chmurowej, omijając analizę na ekran zaoszczędzimy żądanie."})
                     messages.append({"role": "assistant", "content": "Zrozumiałem."})
-                    
             except Exception as e:
                 print(f"{Colors.RED}Błąd API Pythona uderzający poleceniem: {e}{Colors.ENDC}")
                 auto_prompt = f"Polecenie `{cmd}` zakończyło się błędem środowiska: {e}"
