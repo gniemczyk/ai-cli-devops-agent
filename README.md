@@ -77,7 +77,7 @@ Projekt udostępnia szereg wbudowanych narzędzi ułatwiających analizę ustere
 - `python3 agent.py --help` (lub `-h`) - wyświetla pomoc z wprowadzonymi nowościami w zachowaniu i komendach terminalowych.
 
 **Kluczowe modyfikatory dostępne podczas wprowadzania tekstu w konsoli:**
-- `@ścieżka/do/pliku` – wpisanie przedrostka `@` oraz ścieżki (np. `@~/.bashrc` czy `@agent.py`) sprawi, że system lokalnie na dysku automatycznie wczyta treść tego pliku i niejawnie dołączy ją do Twojego zapytania przed wylotem do API. Wygodnie jest po prostu napisać: *"Spróbuj zoptymalizować dla mnie ten plik @agent.py"*.
+- `@ścieżka/do/pliku` – wpisanie przedrostka `@` oraz ścieżki (np. `@config.py` czy `@README.md`) sprawi, że system lokalnie na dysku automatycznie wczyta treść tego pliku i niejawnie dołączy ją do Twojego zapytania przed wylotem do API. **Zabezpieczenia:** walidacja ścieżek (brak path traversal), limit rozmiaru 1MB, dostęp tylko w bieżącym katalogu i podkatalogach. Wygodnie jest po prostu napisać: *"Spróbuj zoptymalizować dla mnie ten plik @agent.py"*.
 - `Zezwolić? (T/n/?)` – gdy agent domofonu zaproponuje wykonanie polecenia systemowego, możesz obok potwierdzenia i odrzucenia - podać **Znak zapytania (`?`)**. Model LLM wygeneruje dedykowane, opisowe wytłumaczenie co dana komenda robi chroniąc twój komputer przed groźnymi incydentami i oszczędzając czas w man page. Otrzymasz ten komunikat od razu i agent następnie poczeka upewniony na poprawną odpowiedź zgodną z wolą.
 - `Błyskawiczna odmowa (n)` – Wpisanie `n` na propozycję agenta w 100% obala jego argument, ucinając ścieżkę odpowiedzi i zwracając błyskawiczne przekazane sterowania w trybie prompt.
 - `Pamięć sesji (Kontekst)` – Skrypt w trakcie działania utrzymuje stałą "pamięć" całej dotychczasowej konwersacji (Twoje pytania, odczytane pliki oraz logi procesów z terminala). Pozwala to na płynne, naturalne rozwiązywanie problemów w wielu krokach, jednak pamięć ta jest ulotna i ulega całkowitemu zresetowaniu po wyłączeniu agenta (`exit`).
@@ -89,6 +89,12 @@ Po zadaniu pytania konfiguracyjnego w luźnym formacie (np. *"sprawdź jakie por
 
 Zastosowane mechanizmy nadzoru sprzętowego:
 - Zanim interpreter prześle polecenie niżej, system **każdorazowo poprosi użytkownika o jawną zgodę** `(T/n)`, zapewniając 100% monitoringu nad egzekutorem.
+- **Inteligentna obsługa dużych wyników** - gdy wyjście komendy przekracza 15k znaków, system oferuje opcje:
+  - **T** - analiza przyciętego wyjścia (pierwsze 15k znaków)
+  - **P** - pierwsze 50 linii wyniku
+  - **O** - ostatnie 50 linii wyniku  
+  - **N** - pokazanie surowego wyjścia bez analizy
+  - **S** - zapis wyniku do pliku i analiza pliku
 - Moduł pozwala po przetworzonym żądaniu, przekazać wyrzut strumieni na podwójny tor. Decyzja `Y/N` wysyła odpowiedź `stdout` / `stderr` terminala z powrotem do podsieci powłoki agenta w celu dogłębnej analityki i streszczenia, bądź rzuca surowe logi operacji precyzyjnie prosto na widok powłoki. 
 - Rozdzielona pętla redukuje do absolutnego zera zużycie tokenów i opóźnienia sprzętowe API dla znanych i pożądanych logów systemowych.
 ---
