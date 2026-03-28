@@ -44,6 +44,26 @@ load_env(os.path.join(BASE_DIR, ".env"))
 CF_API_TOKEN   = os.environ.get("CF_API_TOKEN", "")
 CF_NR_ACCOUNT = os.environ.get("CF_NR_ACCOUNT", "")
 
+def validate_api_keys():
+    """Sprawdza czy klucze API dla domyślnego providera są skonfigurowane."""
+    if DEFAULT_PROVIDER == "cloudflare":
+        missing = []
+        if not CF_API_TOKEN:
+            missing.append("CF_API_TOKEN")
+        if not CF_NR_ACCOUNT:
+            missing.append("CF_NR_ACCOUNT")
+        if missing:
+            raise ValueError(f"Brak wymaganych zmiennych w .env: {', '.join(missing)}")
+    elif DEFAULT_PROVIDER == "openai":
+        if not os.environ.get("OPENAI_API_KEY"):
+            raise ValueError("Brak OPENAI_API_KEY w .env")
+    elif DEFAULT_PROVIDER == "anthropic":
+        if not os.environ.get("ANTHROPIC_API_KEY"):
+            raise ValueError("Brak ANTHROPIC_API_KEY w .env")
+    elif DEFAULT_PROVIDER == "gemini":
+        if not os.environ.get("GEMINI_API_KEY"):
+            raise ValueError("Brak GEMINI_API_KEY w .env")
+
 # Budowanie pełnego adresu Cloudflare Gateway
 CF_GATEWAY_URL = CF_GATEWAY_URL_TEMPLATE.format(account=CF_NR_ACCOUNT)
 

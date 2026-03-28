@@ -19,12 +19,16 @@ def truncate_output(output, max_chars=15000, show_truncation_warning=True):
     return truncated + warning, True
 
 def handle_large_output(output, cmd, is_timeout=False):
-    """Obsługuje duże lub przerwane wyjście z opcjami dla użytkownika."""
+    """Obsługuje duże lub przerwane wyjście z opcjami dla użytkownika.
+    Zwraca krotkę (output, should_analyze, skip_memory).
+    - should_analyze: czy wysłać do agenta do analizy
+    - skip_memory: czy pominąć dodawanie do historii czatu
+    """
     lines_count = len(output.split('\n'))
     
     # Próg: 15k znaków, 200 linii lub jeśli komenda została przerwana (timeout)
     if not is_timeout and len(output) <= 15000 and lines_count < 200:
-        return output, False
+        return output, False, False
     
     reason = "została przerwana (timeout)" if is_timeout else f"ma {len(output)} znaków i {lines_count} linii"
     print(f"\n{Colors.YELLOW}📊 Wyjście komendy `{cmd}` {reason}.{Colors.ENDC}")
@@ -40,31 +44,31 @@ def handle_large_output(output, cmd, is_timeout=False):
         choice = input(f"{Colors.YELLOW}Wybierz opcję (T/P/O/N/S): {Colors.ENDC}").strip().lower()
         
         if choice in ['', 't']:
-            return truncate_output(output)[0], True
+            return truncate_output(output)[0], True, False
         elif choice == 'p':
             lines = output.split('\n')[:50]
             result = '\n'.join(lines)
             if len(output.split('\n')) > 50:
                 result += f"\n\n[...pierwsze 50 z {len(output.split('\n'))} linii...]"
-            return result, True
+            return result, True, False
         elif choice == 'o':
             lines = output.split('\n')[-50:]
             result = '\n'.join(lines)
             if len(output.split('\n')) > 50:
                 result = f"\n\n[...ostatnie 50 z {len(output.split('\n'))} linii...]\n" + result
-            return result, True
+            return result, True, False
         elif choice == 'n':
-            return output, False
+            return output, False, True  # Nie analizuj, pomiń pamięć
         elif choice == 's':
             try:
                 filename = f"output_{cmd.replace(' ', '_').replace('/', '_')[:20]}.txt"
                 with open(filename, 'w', encoding='utf-8') as f:
                     f.write(output)
                 print(f"{Colors.GREEN}✅ Zapisano wyjście do pliku: {filename}{Colors.ENDC}")
-                return f"Wynik komendy `{cmd}` zapisano w pliku `{filename}` do analizy.", True
+                return f"Wynik komendy `{cmd}` zapisano w pliku `{filename}` do analizy.", True, False
             except Exception as e:
                 print(f"{Colors.RED}❌ Błąd zapisu pliku: {e}{Colors.ENDC}")
-                return truncate_output(output)[0], True
+                return truncate_output(output)[0], True, False
         else:
             print(f"{Colors.RED}Nieprawidłowa opcja. Spróbuj ponownie.{Colors.ENDC}")
 
@@ -77,8 +81,9 @@ def is_dangerous_command(cmd):
     
     cmd_lower = cmd.lower()
     
-    # Sprawdź path traversal
-    if '..' in cmd_lower:
+    # Sprawdź path traversal - tylko w ścieżkach (poprzedzone spacją, / lub na początku)
+    # Wyklucza false positive dla np. "echo '..'" lub "git log --oneline"
+    if re.search(r'(?:^|\s|/|\'|")\.\.(?:$|[\s/\'"])', cmd):
         return True
         
     for path in dangerous_paths:
@@ -186,18 +191,24 @@ def handle_agent_commands(agent_reply, messages, client):
                     out_payload += f"\n\n[UWAGA: Polecenie zostało przerwane po {timeout_sec}s limitu czasu. Powyżej znajduje się częściowy wynik.]"
 
                 # Obsługa dużych lub przerwanych wyjść
-                processed_output, should_analyze = handle_large_output(out_payload, cmd, is_timeout=timed_out)
+                processed_output, should_analyze, skip_memory = handle_large_output(out_payload, cmd, is_timeout=timed_out)
                 
                 if should_analyze:
                     print(f"{Colors.YELLOW}✔ Przetworzono wyjście: {len(processed_output)} znaków. Generuję analizę...{Colors.ENDC}\n")
                     auto_prompt = f"Wynik wywołania `{cmd}`:\n```\n{processed_output}\n```\n(przeanalizuj wyjście)"
-                else:
+                elif not skip_memory:
+                    # Tylko wyświetl wynik, ale zapisz w pamięci (dla małych wyjść)
                     print(f"\n{Colors.CYAN}{Colors.BOLD}--- WYNIK KOMENDY `{cmd}` ---{Colors.ENDC}")
                     print(out_payload.strip())
                     print(f"{Colors.CYAN}{Colors.BOLD}----------------------------------{Colors.ENDC}")
                     
                     messages.append({"role": "user", "content": f"Uruchomiono wynik komendy systemowej `{cmd}`:\n```\n{out_payload}\n```\nTylko odnotuj to w pamięci chmurowej, omijając analizę na ekran zaoszczędzimy żądanie."})
                     messages.append({"role": "assistant", "content": "Zrozumiałem."})
+                else:
+                    # Opcja N - tylko wyświetl, bez pamięci
+                    print(f"\n{Colors.CYAN}{Colors.BOLD}--- WYNIK KOMENDY `{cmd}` ---{Colors.ENDC}")
+                    print(out_payload.strip())
+                    print(f"{Colors.CYAN}{Colors.BOLD}----------------------------------{Colors.ENDC}")
             except Exception as e:
                 print(f"{Colors.RED}Błąd API Pythona uderzający poleceniem: {e}{Colors.ENDC}")
                 auto_prompt = f"Polecenie `{cmd}` zakończyło się błędem środowiska: {e}"

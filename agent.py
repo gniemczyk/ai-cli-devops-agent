@@ -2,7 +2,7 @@
 import sys
 import json
 from client import APIClient
-from config import DEFAULT_PROVIDER
+from config import DEFAULT_PROVIDER, validate_api_keys
 from ui import Colors, print_system, print_error
 from file_utils import process_file_mentions
 from executor import handle_agent_commands
@@ -27,6 +27,7 @@ def main():
     print_system("Inicjalizacja środowiska agenta...")
     
     try:
+        validate_api_keys()
         client = APIClient(provider_name=DEFAULT_PROVIDER)
     except Exception as e:
         print_error(f"Nie udało się skonfigurować klienta: {e}")
@@ -37,7 +38,7 @@ def main():
     print_system("Napisz 'exit' lub naciśnij Ctrl+C, aby wyjść.\n")
 
     messages = [
-        {"role": "system", "content": "Jesteś asystentem DevOps o potężnych możliwościach. Jeśli chcesz pozyskać informacje o systemie operacyjnym (np. uruchomić 'docker ps', 'ps aux', 'ls -la'), wygeneruj komendę ujętą dokładnie w specjalne tagi XML: <execute>TWOJA_KOMENDA</execute>.\n\nUżytkownik zostanie natychmiast zapytany o interaktywną zgodę na jej wykonanie. Gdy wyrazi zgodę, komenda zostaje wykonana ukradkiem w tle, a TY zaraz potem otrzymasz od systemu wynik tekstowy tej komendy - wtedy dokonasz dogłębnej analizy dla użytkownika! Wydawaj maksylanie jedną komendę w okienku."}
+        {"role": "system", "content": "Jesteś asystentem DevOps o potężnych możliwościach. Jeśli chcesz pozyskać informacje o systemie operacyjnym (np. uruchomić 'docker ps', 'ps aux', 'ls -la'), wygeneruj komendę ujętą dokładnie w specjalne tagi XML: <execute>TWOJA_KOMENDA</execute>.\n\nUżytkownik zostanie natychmiast zapytany o interaktywną zgodę na jej wykonanie. Gdy wyrazi zgodę, komenda zostaje wykonana ukradkiem w tle, a TY zaraz potem otrzymasz od systemu wynik tekstowy tej komendy - wtedy dokonasz dogłębnej analizy dla użytkownika! Wydawaj maksymalnie jedną komendę w okienku."}
     ]
 
     auto_prompt = None
