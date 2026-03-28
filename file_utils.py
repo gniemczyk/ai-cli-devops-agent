@@ -2,38 +2,34 @@ import os
 import re
 
 def is_safe_path(path):
-    """Sprawdza czy ścieżka jest bezpieczna (brak path traversal)."""
-    # Konwertuj na ścieżkę bezwzględną
-    expanded_path = os.path.expanduser(path)
-    abs_path = os.path.abspath(expanded_path)
-    
-    # Sprawdź czy ścieżka nie zawiera niebezpiecznych sekwencji
-    dangerous_patterns = [
-        '..',  # parent directory
-        '~/',  # home directory (poza kontrolą)
-        '/etc/',  # systemowe
-        '/usr/',  # systemowe
-        '/bin/',  # systemowe
-        '/sbin/',  # systemowe
-        '/var/',  # systemowe
-        '/proc/',  # systemowe
-        '/sys/',  # systemowe
-        '/dev/',  # systemowe
-    ]
-    
-    path_str = str(abs_path)
-    for pattern in dangerous_patterns:
-        if pattern in path_str:
-            return False
-    
-    # Sprawdź czy plik istnieje i jest w bieżącym katalogu lub podkatalogach
-    current_dir = os.path.abspath(os.getcwd())
+    """Sprawdza czy ścieżka jest bezpieczna (brak path traversal i dostęp tylko do plików projektu)."""
+    # Rozwiń ~ i pobierz ścieżkę bezwzględną
     try:
-        # Sprawdź czy ścieżka jest w bieżącym katalogu lub jego podkatalogach
-        os.path.relpath(abs_path, current_dir)
+        expanded_path = os.path.expanduser(path)
+        abs_path = os.path.abspath(expanded_path)
+        current_dir = os.path.abspath(os.getcwd())
+        
+        # Sprawdź, czy ścieżka nie wychodzi poza bieżący katalog roboczy
+        # os.path.commonpath zwróci wspólny prefiks; jeśli nie jest nim current_dir, to ścieżka jest "na zewnątrz"
+        common = os.path.commonpath([current_dir, abs_path])
+        if common != current_dir:
+            return False
+            
+        # Dodatkowa czarna lista dla bezpieczeństwa (nawet wewnątrz projektu)
+        path_str = str(abs_path)
+        dangerous_patterns = [
+            '.env',      # pliki konfiguracyjne z kluczami
+            '.git',      # metadane git
+            '__pycache__',
+            '.ssh',      # gdyby ktoś wrzucił link symboliczny itp.
+        ]
+        
+        for pattern in dangerous_patterns:
+            if pattern in path_str:
+                return False
+                
         return True
-    except ValueError:
-        # Ścieżka na innym dysku/systemie plików
+    except Exception:
         return False
 
 def process_file_mentions(text):
