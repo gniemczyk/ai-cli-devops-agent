@@ -2,8 +2,13 @@ import re
 import sys
 import subprocess
 import shlex
-import termios
-import tty
+import platform
+try:
+    import termios
+    import tty
+    UNIX_AVAILABLE = True
+except ImportError:
+    UNIX_AVAILABLE = False  # Windows
 from ui import Colors, print_error
 
 def truncate_output(output, max_chars=15000, show_truncation_warning=True):
@@ -23,6 +28,9 @@ def truncate_output(output, max_chars=15000, show_truncation_warning=True):
 
 def reset_terminal_state():
     """Resetuje stan terminala dla uniknięcia blokowania na Linux."""
+    if not UNIX_AVAILABLE:
+        return  # Windows nie potrzebuje resetu terminala
+    
     try:
         # Przywróć ustawienia terminala
         if hasattr(sys.stdin, 'fileno'):
@@ -36,7 +44,7 @@ def reset_terminal_state():
     except:
         pass  # Ignoruj błędy na macOS/Windows
     
-    # Ostateczność - uruchom stty sane
+    # Ostateczność - uruchom stty sane (tylko Unix)
     try:
         subprocess.run(['stty', 'sane'], stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr, timeout=1)
     except:
@@ -239,8 +247,13 @@ def handle_agent_commands(agent_reply, messages, client):
                 if has_shell_chars:
                     # Komenda złożona - wymaga shella, ale z dodatkowym ostrzeżeniem
                     print(f"{Colors.YELLOW}⚠️ Komenda zawiera potoki/przekierowania - wymaga shell. Dodatkowa ostrożność!{Colors.ENDC}")
+                    # Wybierz odpowiedni shell dla systemu
+                    if platform.system() == 'Windows':
+                        shell_cmd = ['cmd', '/c', cmd]
+                    else:
+                        shell_cmd = ['/bin/bash', '-c', cmd]
                     res = subprocess.run(
-                        ['/bin/bash', '-c', cmd],
+                        shell_cmd,
                         stdout=subprocess.PIPE, 
                         stderr=subprocess.PIPE, 
                         universal_newlines=True, 
@@ -260,8 +273,13 @@ def handle_agent_commands(agent_reply, messages, client):
                     except ValueError as e:
                         # Jeśli shlex.split nie radzi sobie z komendą, użyj shella jako fallback
                         print(f"{Colors.YELLOW}⚠️ Komenda wymaga shell: {e}{Colors.ENDC}")
+                        # Wybierz odpowiedni shell dla systemu
+                        if platform.system() == 'Windows':
+                            shell_cmd = ['cmd', '/c', cmd]
+                        else:
+                            shell_cmd = ['/bin/bash', '-c', cmd]
                         res = subprocess.run(
-                            ['/bin/bash', '-c', cmd],
+                            shell_cmd,
                             stdout=subprocess.PIPE, 
                             stderr=subprocess.PIPE, 
                             universal_newlines=True, 
