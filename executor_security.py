@@ -56,7 +56,20 @@ def is_dangerous_command(cmd):
     ]
     
     for dangerous in dangerous_commands:
-        if dangerous in cmd_lower:
+        # Zabezpieczenie przed substringami (np. 'at' w 'cat')
+        # Używamy regex, aby sprawdzić czy komenda występuje jako osobny token
+        # Wyjątek dla operatorów przekierowań i potoków
+        if dangerous in ['>', '>>', '|', '&&', '||']:
+            if dangerous in cmd_lower:
+                return True
+            continue
+            
+        # Sprawdzamy czy fraza występuje na początku lub po spacji, 
+        # oraz kończy się spacją, slashem lub końcem linii
+        # Przycinamy 'dangerous' z białych znaków, bo regex sam obsłuży granice
+        clean_dangerous = dangerous.strip()
+        pattern = rf"(^|\s){re.escape(clean_dangerous)}($|[\s/])"
+        if re.search(pattern, cmd_lower):
             return True
         
     return False
