@@ -1,6 +1,7 @@
 import re
 import sys
 import subprocess
+import shlex
 from ui import Colors, print_error
 
 def truncate_output(output, max_chars=15000, show_truncation_warning=True):
@@ -87,7 +88,7 @@ def is_dangerous_command(cmd):
     
     # Sprawdź path traversal - tylko w ścieżkach (poprzedzone spacją, / lub na początku)
     # Wyklucza false positive dla np. "echo '..'" lub "git log --oneline"
-    if re.search(r'(?:^|\s|/|\'|")\.\.(?:$|[\s/\'"])', cmd):
+    if re.search(r'(?:^|\s|/|\'|\"\'\')\.\.(?:$|[\s/\'"])', cmd):
         return True
         
     for path in dangerous_paths:
@@ -97,10 +98,36 @@ def is_dangerous_command(cmd):
         if re.search(pattern, cmd_lower):
             return True
             
-    # Potencjalnie groźne modyfikatory plików poza projektem
-    if 'rm ' in cmd_lower or 'chmod ' in cmd_lower or 'chown ' in cmd_lower:
-        return True
-        
+    # Rozszerzona lista niebezpiecznych komend
+    dangerous_commands = [
+        # Modyfikatory plików/systemu
+        'rm ', 'chmod ', 'chown ', 'dd', 'mkfs', 'fdisk', 'parted',
+        # Zarządzanie systemem
+        'shutdown', 'reboot', 'halt', 'poweroff', 'systemctl',
+        # Procesy
+        'kill ', 'pkill', 'killall',
+        # Eksfiltracja danych / sieci
+        'curl ', 'wget ', 'nc ', 'netcat', 'scp ', 'rsync',
+        # Wykonywanie kodu / injection
+        'python', 'python3', 'perl ', 'ruby ', 'node ', 'php ',
+        'eval ', 'exec ', 'source ',
+        # Uprawnienia
+        'sudo ', 'su ', 'doas ',
+        # Sieć/firewall
+        'iptables', 'firewall-cmd', 'ufw',
+        # Automatyzacja/zadania
+        'crontab', 'at ',
+        # Zarządzanie użytkownikami
+        'useradd', 'userdel', 'usermod', 'passwd',
+        # Inne niebezpieczne
+        'mv /', 'cp /', 'cat /etc/', 'vim /etc/', 'nano /etc/',
+        '>', '>>', '|', '&&', '||',  # przekierowania i łańcuchy komend
+    ]
+    
+    for dangerous in dangerous_commands:
+        if dangerous in cmd_lower:
+            return True
+            
     return False
 
 def handle_agent_commands(agent_reply, messages, client):
@@ -163,11 +190,44 @@ def handle_agent_commands(agent_reply, messages, client):
         
         if choice in ['', 't', 'y', 'tak', 'yes']:
             timeout_sec = 10
-            print(f"Uruchamiam podproces (limit {timeout_sec}s, czekaj...)...")
+            print(f"Uruchamiam podproces (limit {timeout_sec}s, czekaj...)")
             timed_out = False
             try:
-                # Kompatybilność wsteczna z Python 3.6 (brak capture_output i text)
-                res = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, timeout=timeout_sec)
+                # Bezpieczniejsze wykonanie komendy bez shell=True
+                # Sprawdź czy komenda zawiera przekierowania lub potoki
+                has_shell_chars = any(c in cmd for c in ['|', '&&', '||', '>', '>>', '<', '$(', '`'])
+                
+                if has_shell_chars:
+                    # Komenda złożona - wymaga shella, ale z dodatkowym ostrzeżeniem
+                    print(f"{Colors.YELLOW}⚠️ Komenda zawiera potoki/przekierowania - wymaga shell. Dodatkowa ostrożność!{Colors.ENDC}")
+                    res = subprocess.run(
+                        ['/bin/bash', '-c', cmd],
+                        stdout=subprocess.PIPE, 
+                        stderr=subprocess.PIPE, 
+                        universal_newlines=True, 
+                        timeout=timeout_sec
+                    )
+                else:
+                    # Prosta komenda - użyj shlex.split dla bezpieczeństwa
+                    try:
+                        args = shlex.split(cmd)
+                        res = subprocess.run(
+                            args, 
+                            stdout=subprocess.PIPE, 
+                            stderr=subprocess.PIPE, 
+                            universal_newlines=True, 
+                            timeout=timeout_sec
+                        )
+                    except ValueError as e:
+                        # Jeśli shlex.split nie radzi sobie z komendą, użyj shella jako fallback
+                        print(f"{Colors.YELLOW}⚠️ Komenda wymaga shell: {e}{Colors.ENDC}")
+                        res = subprocess.run(
+                            ['/bin/bash', '-c', cmd],
+                            stdout=subprocess.PIPE, 
+                            stderr=subprocess.PIPE, 
+                            universal_newlines=True, 
+                            timeout=timeout_sec
+                        )
                 out_payload = res.stdout + res.stderr
             except subprocess.TimeoutExpired as te:
                 timed_out = True
@@ -222,7 +282,5 @@ def handle_agent_commands(agent_reply, messages, client):
             messages.append({"role": "user", "content": f"[SYSTEM]: Użytkownik odmówił wykonania komendy `{cmd}`. Nie proponuj jej ponownie bez prośby."})
             messages.append({"role": "assistant", "content": "Zrozumiałem."})
             auto_prompt = None
-        
-        break
         
     return auto_prompt, executed_something
