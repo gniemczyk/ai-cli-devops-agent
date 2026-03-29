@@ -88,7 +88,7 @@ def is_dangerous_command(cmd):
     
     # Sprawdź path traversal - tylko w ścieżkach (poprzedzone spacją, / lub na początku)
     # Wyklucza false positive dla np. "echo '..'" lub "git log --oneline"
-    if re.search(r'(?:^|\s|/|\'|\"\'\')\.\.(?:$|[\s/\'"])', cmd):
+    if re.search(r'(?:^|\s|/|\'|")\.\.(?:$|[\s/\'"])', cmd):
         return True
         
     for path in dangerous_paths:
@@ -98,6 +98,10 @@ def is_dangerous_command(cmd):
         if re.search(pattern, cmd_lower):
             return True
             
+    # Potencjalnie groźne modyfikatory plików poza projektem
+    if 'rm ' in cmd_lower or 'chmod ' in cmd_lower or 'chown ' in cmd_lower:
+        return True
+        
     # Rozszerzona lista niebezpiecznych komend
     dangerous_commands = [
         # Modyfikatory plików/systemu
@@ -127,7 +131,7 @@ def is_dangerous_command(cmd):
     for dangerous in dangerous_commands:
         if dangerous in cmd_lower:
             return True
-            
+        
     return False
 
 def handle_agent_commands(agent_reply, messages, client):
@@ -190,7 +194,7 @@ def handle_agent_commands(agent_reply, messages, client):
         
         if choice in ['', 't', 'y', 'tak', 'yes']:
             timeout_sec = 10
-            print(f"Uruchamiam podproces (limit {timeout_sec}s, czekaj...)")
+            print(f"Uruchamiam podproces (limit {timeout_sec}s, czekaj...)...")
             timed_out = False
             try:
                 # Bezpieczniejsze wykonanie komendy bez shell=True
@@ -246,7 +250,6 @@ def handle_agent_commands(agent_reply, messages, client):
             except Exception as e:
                 print(f"{Colors.RED}Błąd API Pythona uderzający poleceniem: {e}{Colors.ENDC}")
                 auto_prompt = f"Polecenie `{cmd}` zakończyło się błędem środowiska: {e}"
-                break
 
             try:
                 if not out_payload.strip():
