@@ -1,92 +1,47 @@
 import os
 
 # ==============================================================================
-# 1. KONFIGURACJA UŻYTKOWNIKA (Tu możesz wprowadzać zmiany)
+# 1. KONFIGURACJA UŻYTKOWNIKA (Tu wprowadzaj swoje zmiany)
 # ==============================================================================
 
-# Domyślny dostawca API (wybierz: "cloudflare", "openai", "anthropic", "gemini")
-DEFAULT_PROVIDER = "cloudflare"
+# Domyślny dostawca API (wybierz: "cloudflare", "openai", "anthropic", "gemini", "openrouter")
+DEFAULT_PROVIDER = "openrouter"
 
-# Domyślny model AI
-DEFAULT_MODEL = "workers-ai/@cf/meta/llama-4-scout-17b-16e-instruct"
+# Domyślny model AI (używany dla wszystkich dostawców)
+# DEFAULT_MODEL = "workers-ai/@cf/meta/llama-4-scout-17b-16e-instruct"
+DEFAULT_MODEL = "nvidia/nemotron-3-super-120b-a12b:free"
 
-# Adres Cloudflare AI Gateway (podmień jeśli Cloudflare zmieni strukturę endpointu)
-# Numer konta ({CF_NR_ACCOUNT}) wczytywany jest automatycznie z pliku .env
-CF_GATEWAY_URL_TEMPLATE = "https://gateway.ai.cloudflare.com/v1/{account}/ai-gateway-model-ai/compat"
-
-
-# ==============================================================================
-# 2. LOGIKA WEWNĘTRZNA (Zaleca się nie zmieniać poniższego)
-# ==============================================================================
-
-def load_env(filepath=".env"):
-    """Ładuje zmienne środowiskowe z pliku tekstowego (bez zewnętrznych bibliotek)."""
-    try:
-        with open(filepath, "r", encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                if not line or line.startswith("#"):
-                    continue
-                if "=" in line:
-                    key, val = line.split("=", 1)
-                    key = key.strip()
-                    val = val.strip().strip("'\"")
-                    if key not in os.environ:
-                        os.environ[key] = val
-    except FileNotFoundError:
-        pass
-
-# Wczytywanie z pliku ukrytego .env w głównym katalogu obok pliku config
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-load_env(os.path.join(BASE_DIR, ".env"))
-
-# Pobranie wrażliwych danych z środowiska
-CF_API_TOKEN   = os.environ.get("CF_API_TOKEN", "")
-CF_NR_ACCOUNT = os.environ.get("CF_NR_ACCOUNT", "")
-
-def validate_api_keys():
-    """Sprawdza czy klucze API dla domyślnego providera są skonfigurowane."""
-    if DEFAULT_PROVIDER == "cloudflare":
-        missing = []
-        if not CF_API_TOKEN:
-            missing.append("CF_API_TOKEN")
-        if not CF_NR_ACCOUNT:
-            missing.append("CF_NR_ACCOUNT")
-        if missing:
-            raise ValueError(f"Brak wymaganych zmiennych w .env: {', '.join(missing)}")
-    elif DEFAULT_PROVIDER == "openai":
-        if not os.environ.get("OPENAI_API_KEY"):
-            raise ValueError("Brak OPENAI_API_KEY w .env")
-    elif DEFAULT_PROVIDER == "anthropic":
-        if not os.environ.get("ANTHROPIC_API_KEY"):
-            raise ValueError("Brak ANTHROPIC_API_KEY w .env")
-    elif DEFAULT_PROVIDER == "gemini":
-        if not os.environ.get("GEMINI_API_KEY"):
-            raise ValueError("Brak GEMINI_API_KEY w .env")
-
-# Budowanie pełnego adresu Cloudflare Gateway
-CF_GATEWAY_URL = CF_GATEWAY_URL_TEMPLATE.format(account=CF_NR_ACCOUNT)
+# Progi i limity pamięci (Tokeny)
+# Przybliżona liczba tokenów (1 słowo ~= 1.33 tokena)
+MEMORY_WINDOW_LIMIT = 4000  # Maksymalna liczba tokenów w pamięci zanim zaczniemy ostrzegać
+MEMORY_SOFT_LIMIT = 3000    # Próg po którym pojawia się ostrzeżenie o dużej ilości danych
 
 # Słownik dostawców
+# Możesz tutaj dodawać własnych dostawców zgodnych z OpenAI API
 PROVIDERS = {
     "cloudflare": {
-        "url": f"{CF_GATEWAY_URL}/chat/completions",
-        "api_key": CF_API_TOKEN,
-        "default_model": DEFAULT_MODEL
+        "url": "https://gateway.ai.cloudflare.com/v1/{account}/ai-gateway-model-ai/compat/chat/completions",
+        "api_key": "", # Wypełniane automatycznie z .env przez env_loader.py
+        "default_model": DEFAULT_MODEL,
     },
     "openai": {
         "url": "https://api.openai.com/v1/chat/completions",
-        "api_key": os.environ.get("OPENAI_API_KEY", ""),
-        "default_model": "gpt-4o"
+        "api_key": "", # Wypełniane automatycznie z .env
+        "default_model": DEFAULT_MODEL
     },
     "anthropic": {
         "url": "https://api.anthropic.com/v1/messages",
-        "api_key": os.environ.get("ANTHROPIC_API_KEY", ""),
-        "default_model": "claude-3-5-sonnet-20241022"
+        "api_key": "", # Wypełniane automatycznie z .env
+        "default_model": DEFAULT_MODEL
     },
     "gemini": {
         "url": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
-        "api_key": os.environ.get("GEMINI_API_KEY", ""),
-        "default_model": "gemini-2.0-flash"
+        "api_key": "", # Wypełniane automatycznie z .env
+        "default_model": DEFAULT_MODEL
+    },
+    "openrouter": {
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "api_key": "", # Wypełniane automatycznie z OPENROUTER_API_KEY w .env
+        "default_model": DEFAULT_MODEL
     },
 }
