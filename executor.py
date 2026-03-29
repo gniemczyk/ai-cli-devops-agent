@@ -29,8 +29,18 @@ def reset_terminal_state():
             fd = sys.stdin.fileno()
             old_settings = termios.tcgetattr(fd)
             termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+            # Dodatkowo wymuś tryb kanoniczny
+            new_settings = termios.tcgetattr(fd)
+            new_settings[3] = new_settings[3] | termios.ICANON | termios.ECHO
+            termios.tcsetattr(fd, termios.TCSADRAIN, new_settings)
     except:
         pass  # Ignoruj błędy na macOS/Windows
+    
+    # Ostateczność - uruchom stty sane
+    try:
+        subprocess.run(['stty', 'sane'], stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr, timeout=1)
+    except:
+        pass
 
 def handle_large_output(output, cmd, is_timeout=False):
     """Obsługuje duże lub przerwane wyjście z opcjami dla użytkownika.
@@ -184,6 +194,9 @@ def handle_agent_commands(agent_reply, messages, client):
             
         print(f"Będzie wykonane: {Colors.CYAN}{Colors.BOLD}> {cmd} <{Colors.ENDC}")
         
+        # Reset terminala przed każdym input (dla Linux)
+        reset_terminal_state()
+        
         while True:
             choice = input(f"{Colors.RED}Zezwolić? (T/n/? - wyjaśnij): {Colors.ENDC}").strip().lower()
             if choice == '?':
@@ -203,6 +216,7 @@ def handle_agent_commands(agent_reply, messages, client):
                 print(f"\n{Colors.RED}{Colors.BOLD}‼️  CZY NA PEWNO? Operator bierze na siebie PEŁNĄ ODPOWIEDZIALNOŚĆ{Colors.ENDC}")
                 print(f"{Colors.RED}{Colors.BOLD}za skutki tej komendy w systemie. (T/n): {Colors.ENDC}", end="")
                 sys.stdout.flush()
+                reset_terminal_state()  # Reset przed drugim input
                 choice2 = input().strip().lower()
                 if choice2 in ['t', 'y', 'tak', 'yes']:
                     choice = 't' # Przechodzimy dalej
@@ -256,6 +270,9 @@ def handle_agent_commands(agent_reply, messages, client):
                 out_payload = res.stdout + res.stderr
             except subprocess.TimeoutExpired as te:
                 timed_out = True
+                
+                # KRYTYCZNE: Natychmiast zresetuj terminal po timeout
+                reset_terminal_state()
                 
                 # Przechwyć to co się udało zebrać, dbając o typ danych (str vs bytes)
                 raw_stdout = te.stdout if te.stdout is not None else ""

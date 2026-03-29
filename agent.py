@@ -5,7 +5,7 @@ from client import APIClient
 from config import DEFAULT_PROVIDER, validate_api_keys
 from ui import Colors, print_system, print_error
 from file_utils import process_file_mentions
-from executor import handle_agent_commands
+from executor import handle_agent_commands, reset_terminal_state
 
 def print_help():
     print(f"{Colors.CYAN}{Colors.BOLD}=== Lokalny Agent DevOps (AI CLI) ==={Colors.ENDC}")
@@ -86,9 +86,11 @@ def main():
                 print_error(f"Dziwny format odpowiedzi z serwera:\n{json.dumps(response, indent=2)}")
 
         except KeyboardInterrupt:
+            reset_terminal_state()  # Reset terminala na Linux
             print_system("\nZakończono przez użytkownika (Ctrl+C).")
             break
         except EOFError:
+            reset_terminal_state()  # Reset terminala na Linux
             print_system("\nZakończono (EOF).")
             break
         except Exception as e:
