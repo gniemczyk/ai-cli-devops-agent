@@ -6,8 +6,9 @@ def is_safe_path(path):
     # Rozwiń ~ i pobierz ścieżkę bezwzględną
     try:
         expanded_path = os.path.expanduser(path)
-        abs_path = os.path.abspath(expanded_path)
-        current_dir = os.path.abspath(os.getcwd())
+        # os.path.realpath rozwiązuje wszystkie symlinki, os.path.abspath tego nie gwarantuje w 100%
+        abs_path = os.path.realpath(expanded_path)
+        current_dir = os.path.realpath(os.getcwd())
         
         # Sprawdź, czy ścieżka nie wychodzi poza bieżący katalog roboczy
         # os.path.commonpath zwróci wspólny prefiks; jeśli nie jest nim current_dir, to ścieżka jest "na zewnątrz"

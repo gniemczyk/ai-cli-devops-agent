@@ -41,7 +41,11 @@ def handle_large_output(output, cmd, is_timeout=False):
     
     sys.stdout.flush()
     while True:
-        choice = input(f"{Colors.YELLOW}Wybierz opcję (T/P/O/N/S): {Colors.ENDC}").strip().lower()
+        try:
+            choice = input(f"{Colors.YELLOW}Wybierz opcję (T/P/O/N/S): {Colors.ENDC}").strip().lower()
+        except KeyboardInterrupt:
+            print(f"\n{Colors.YELLOW}Anulowano przetwarzanie dużego wyjścia.{Colors.ENDC}")
+            return truncate_output(output)[0], True, False
         
         if choice in ['', 't']:
             return truncate_output(output)[0], True, False
@@ -162,7 +166,8 @@ def handle_agent_commands(agent_reply, messages, client):
             print(f"Uruchamiam podproces (limit {timeout_sec}s, czekaj...)...")
             timed_out = False
             try:
-                res = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=timeout_sec)
+                # Kompatybilność wsteczna z Python 3.6 (brak capture_output i text)
+                res = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, timeout=timeout_sec)
                 out_payload = res.stdout + res.stderr
             except subprocess.TimeoutExpired as te:
                 timed_out = True

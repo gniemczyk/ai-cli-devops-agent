@@ -12,6 +12,7 @@ class APIClient:
         if provider_name not in PROVIDERS:
             raise ValueError(f"Nieznany provider: {provider_name}")
             
+        self.provider = provider_name
         self.config = PROVIDERS[provider_name]
         self.url = self.config["url"]
         self.api_key = self.config["api_key"]
@@ -24,9 +25,15 @@ class APIClient:
         """Wysyła zapytanie do API wybranego providera."""
         headers = {
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.api_key}",
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Chrome/124.0.0.0 Safari/537.36"
+            "User-Agent": "AI-DevOps-Agent/1.0"
         }
+
+        # Obsługa specyficznych nagłówków dla różnych dostawców
+        if self.provider == "anthropic":
+            headers["x-api-key"] = self.api_key
+            headers["anthropic-version"] = "2023-06-01"
+        else:
+            headers["Authorization"] = f"Bearer {self.api_key}"
         
         data = {
             "model": self.model,
