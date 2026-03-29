@@ -2,6 +2,8 @@ import re
 import sys
 import subprocess
 import shlex
+import termios
+import tty
 from ui import Colors, print_error
 
 def truncate_output(output, max_chars=15000, show_truncation_warning=True):
@@ -18,6 +20,17 @@ def truncate_output(output, max_chars=15000, show_truncation_warning=True):
     
     warning = f"\n\n[...WYJŚCIE PRZYCINĘTE z {len(output)} do {len(truncated)} znaków...]\n" if show_truncation_warning else ""
     return truncated + warning, True
+
+def reset_terminal_state():
+    """Resetuje stan terminala dla uniknięcia blokowania na Linux."""
+    try:
+        # Przywróć ustawienia terminala
+        if hasattr(sys.stdin, 'fileno'):
+            fd = sys.stdin.fileno()
+            old_settings = termios.tcgetattr(fd)
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+    except:
+        pass  # Ignoruj błędy na macOS/Windows
 
 def handle_large_output(output, cmd, is_timeout=False):
     """Obsługuje duże lub przerwane wyjście z opcjami dla użytkownika.
@@ -41,12 +54,20 @@ def handle_large_output(output, cmd, is_timeout=False):
     print(f"  5) {Colors.GREEN}S{Colors.ENDC} - Zapisz do pliku i przeanalizuj plik")
     
     sys.stdout.flush()
+    reset_terminal_state()  # Reset stanu terminala dla Linux
+    
     while True:
         try:
+            # Dodatkowe czyszczenie bufora dla bezpieczeństwa
+            sys.stdin.flush()
             choice = input(f"{Colors.YELLOW}Wybierz opcję (T/P/O/N/S): {Colors.ENDC}").strip().lower()
         except KeyboardInterrupt:
             print(f"\n{Colors.YELLOW}Anulowano przetwarzanie dużego wyjścia.{Colors.ENDC}")
             return truncate_output(output)[0], True, False
+        except (EOFError, OSError):
+            # Obsługa błędów wejścia na Linux
+            print(f"\n{Colors.YELLOW}Błąd wejścia - próbuję ponownie...{Colors.ENDC}")
+            continue
         
         if choice in ['', 't']:
             return truncate_output(output)[0], True, False
@@ -280,6 +301,10 @@ def handle_agent_commands(agent_reply, messages, client):
             except Exception as e:
                 print(f"{Colors.RED}Błąd API Pythona uderzający poleceniem: {e}{Colors.ENDC}")
                 auto_prompt = f"Polecenie `{cmd}` zakończyło się błędem środowiska: {e}"
+
+            # Reset stanu terminala po wykonaniu komendy systemowej
+            reset_terminal_state()
+            sys.stdin.flush()
         else:
             print(f"{Colors.YELLOW}❌ Zablokowałeś wykonanie polecenia. Wracam do nasłuchu...{Colors.ENDC}")
             messages.append({"role": "user", "content": f"[SYSTEM]: Użytkownik odmówił wykonania komendy `{cmd}`. Nie proponuj jej ponownie bez prośby."})
