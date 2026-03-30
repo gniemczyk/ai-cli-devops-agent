@@ -8,13 +8,17 @@ import os
 DEFAULT_PROVIDER = "openrouter"
 
 # Domyślny model AI (używany dla wszystkich dostawców)
-# DEFAULT_MODEL = "workers-ai/@cf/meta/llama-4-scout-17b-16e-instruct"
-DEFAULT_MODEL = "nvidia/nemotron-3-super-120b-a12b:free"
+#DEFAULT_MODEL = "workers-ai/@cf/meta/llama-4-scout-17b-16e-instruct"
+DEFAULT_MODEL = "openrouter/free"
 
 # Progi i limity pamięci (Tokeny)
 # Przybliżona liczba tokenów (1 słowo ~= 1.33 tokena)
 MEMORY_WINDOW_LIMIT = 4000  # Maksymalna liczba tokenów w pamięci zanim zaczniemy ostrzegać
 MEMORY_SOFT_LIMIT = 3000    # Próg po którym pojawia się ostrzeżenie o dużej ilości danych
+
+# Limity tokenów dla odpowiedzi API
+MAX_TOKENS = 1024           # Maksymalna liczba tokenów w odpowiedzi modelu
+TEMPERATURE = 0.2           # Temperatura modelu (0.0-1.0, niższa = bardziej zwięzłe odpowiedzi)
 
 # Słownik dostawców
 # Możesz tutaj dodawać własnych dostawców zgodnych z OpenAI API

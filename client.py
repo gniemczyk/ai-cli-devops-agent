@@ -2,7 +2,7 @@ import json
 import urllib.request
 import urllib.error
 import socket
-from config import PROVIDERS, MEMORY_WINDOW_LIMIT, MEMORY_SOFT_LIMIT
+from config import PROVIDERS, MEMORY_WINDOW_LIMIT, MEMORY_SOFT_LIMIT, MAX_TOKENS, TEMPERATURE
 
 # Maksymalny czas oczekiwania na odpowiedź API (w sekundach)
 REQUEST_TIMEOUT = 30
@@ -52,8 +52,14 @@ class APIClient:
         
         data = {
             "model": self.model,
-            "messages": messages
+            "messages": messages,
+            "max_tokens": MAX_TOKENS,
+            "temperature": TEMPERATURE
         }
+        
+        # Parametr reasoning tylko dla OpenRouter (modele reasoning jak nemotron)
+        if self.provider == "openrouter":
+            data["reasoning"] = {"effort": "low"}
         
         req = urllib.request.Request(
             self.url,
