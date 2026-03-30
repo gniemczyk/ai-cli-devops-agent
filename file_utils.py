@@ -42,7 +42,7 @@ def process_file_mentions(text):
     found_mentions = re.findall(pattern, text)
     
     # Komendy systemowe, które nie powinny być traktowane jako pliki
-    system_commands = ['clear']
+    system_commands = ['clear', 'compact']
     
     commands_triggered = []
     clean_text = text
