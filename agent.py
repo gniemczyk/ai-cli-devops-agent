@@ -101,7 +101,7 @@ Użytkownik zostanie natychmiast zapytany o interaktywną zgodę na jej wykonani
                 print(f"{Colors.GREEN}{Colors.BOLD}🤖 Agent{token_info}:{Colors.ENDC}\n{agent_reply}\n")
                 
                 if tokens_count > MEMORY_SOFT_LIMIT:
-                    print(f"{Colors.YELLOW}⚠️  Pamięć agenta jest duża ({tokens_count} tokenów). Rozważ zresetowanie sesji (Ctrl+C i ponowne uruchomienie), aby uniknąć błędów lub wysokich kosztów.{Colors.ENDC}\n")
+                    print(f"{Colors.YELLOW}⚠️  Pamięć agenta jest duża ({tokens_count} tokenów). Rozważ wyczyszczenie pamięci poleceniem @clear lub zresetowanie sesji (Ctrl+C i ponowne uruchomienie), aby uniknąć błędów lub wysokich kosztów.{Colors.ENDC}\n")
 
                 messages.append({"role": "assistant", "content": agent_reply})
                 
