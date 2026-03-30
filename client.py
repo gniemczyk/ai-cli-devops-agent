@@ -2,18 +2,22 @@ import json
 import urllib.request
 import urllib.error
 import socket
-from config import PROVIDERS
+from config import PROVIDERS, MEMORY_WINDOW_LIMIT, MEMORY_SOFT_LIMIT, MAX_TOKENS, TEMPERATURE
 
 # Maksymalny czas oczekiwania na odpowiedź API (w sekundach)
 REQUEST_TIMEOUT = 30
 
 class APIClient:
-    def __init__(self, provider_name="cloudflare"):
-        if provider_name not in PROVIDERS:
+    def __init__(self, provider_name="cloudflare", providers_config=None):
+        if providers_config is None:
+            from config import PROVIDERS
+            providers_config = PROVIDERS
+
+        if provider_name not in providers_config:
             raise ValueError(f"Nieznany provider: {provider_name}")
             
         self.provider = provider_name
-        self.config = PROVIDERS[provider_name]
+        self.config = providers_config[provider_name]
         self.url = self.config["url"]
         self.api_key = self.config["api_key"]
         self.model = self.config["default_model"]
@@ -21,8 +25,19 @@ class APIClient:
     def set_model(self, model_name):
         self.model = model_name
 
+    def estimate_tokens(self, messages):
+        """Przybliżone liczenie tokenów (1 słowo ~= 1.33 tokena)."""
+        text = ""
+        for m in messages:
+            text += m.get("content", "") + " "
+        words = len(text.split())
+        return int(words * 1.33)
+
     def chat_completion(self, messages):
         """Wysyła zapytanie do API wybranego providera."""
+        # Obliczanie przybliżonej liczby tokenów w wysyłanych wiadomościach
+        total_tokens = self.estimate_tokens(messages)
+        
         headers = {
             "Content-Type": "application/json",
             "User-Agent": "AI-DevOps-Agent/1.0"
@@ -37,8 +52,14 @@ class APIClient:
         
         data = {
             "model": self.model,
-            "messages": messages
+            "messages": messages,
+            "max_tokens": MAX_TOKENS,
+            "temperature": TEMPERATURE
         }
+        
+        # Parametr reasoning tylko dla OpenRouter (modele reasoning jak nemotron)
+        if self.provider == "openrouter":
+            data["reasoning"] = {"effort": "low"}
         
         req = urllib.request.Request(
             self.url,
@@ -51,6 +72,8 @@ class APIClient:
             # Próba w pełni zabezpieczonego nawiązania połączenia szyfrowanego (domyślna dla np. Debiana)
             with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as response:
                 result = json.loads(response.read().decode("utf-8"))
+                # Dodajemy informację o tokenach do wyniku
+                result["_total_tokens"] = total_tokens
                 return result
                 
         except socket.timeout:
@@ -78,6 +101,7 @@ class APIClient:
                 try:
                     with urllib.request.urlopen(req, context=ctx, timeout=REQUEST_TIMEOUT) as response:
                         result = json.loads(response.read().decode("utf-8"))
+                        result["_total_tokens"] = total_tokens
                         return result
                 except socket.timeout:
                     return {"error": f"Przekroczono limit czasu oczekiwania ({REQUEST_TIMEOUT}s). Sprawdź połączenie lub zwiększ REQUEST_TIMEOUT w client.py."}

@@ -34,11 +34,40 @@ def is_safe_path(path):
         return False
 
 def process_file_mentions(text):
+    """
+    Wyłapuje wzorce @cos_tam. 
+    Zwraca (zmodyfikowany_tekst, lista_wykrytych_komend)
+    """
     pattern = r'@([^\s]+)'
-    paths = set(re.findall(pattern, text))
+    found_mentions = re.findall(pattern, text)
     
+    # Komendy systemowe, które nie powinny być traktowane jako pliki
+    system_commands = ['clear']
+    
+    commands_triggered = []
+    clean_text = text
     appended_content = ""
-    for path in paths:
+    
+    # Najpierw usuwamy komendy z tekstu, żeby nie "straszyły" agenta
+    for mention in found_mentions:
+        if mention.lower() in system_commands:
+            commands_triggered.append(mention.lower())
+            # Usuwamy @command z tekstu wysyłanego do LLM
+            clean_text = clean_text.replace(f"@{mention}", "").strip()
+            continue
+
+        # Jeśli to nie komenda, traktujemy jak plik
+        path = mention
+        
+        # Pomiń ścieżki absolutne systemowe (np. @/dev, @/etc) - to nie są pliki projektu
+        if path.startswith('/'):
+            continue
+            
+        # Pomiń path traversal attempts
+        if '..' in path:
+            appended_content += f"\n\n[System: Odrzucono nieprawidłową ścieżkę {path}]\n"
+            continue
+            
         expanded_path = os.path.expanduser(path)
         try:
             # Walidacja bezpieczeństwa ścieżki
@@ -47,7 +76,6 @@ def process_file_mentions(text):
                 continue
                 
             if os.path.isfile(expanded_path):
-                # Sprawdź rozmiar pliku (ograniczmy do 1MB)
                 file_size = os.path.getsize(expanded_path)
                 if file_size > 1024 * 1024:  # 1MB
                     appended_content += f"\n\n[System: Plik {path} jest zbyt duży ({file_size} bytes). Maksymalny rozmiar to 1MB]\n"
@@ -57,10 +85,13 @@ def process_file_mentions(text):
                     content = f.read()
                 appended_content += f"\n\n--- Zawartość pliku: {path} ({file_size} bytes) ---\n{content}\n-----------------------------------\n"
             else:
-                appended_content += f"\n\n[System: Brak pliku {path} lub to nie jest plik]\n"
+                # Jeśli to nie był plik i nie była to komenda, zostawiamy w tekście (może to być np. handle na twitterze w zapytaniu)
+                pass
         except Exception as e:
             appended_content += f"\n\n[System: Błąd wczytywania pliku {path}: {e}]\n"
             
+    final_text = clean_text
     if appended_content:
-        return text + appended_content
-    return text
+        final_text += appended_content
+        
+    return final_text, commands_triggered
