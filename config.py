@@ -5,15 +5,15 @@ import os
 # ==============================================================================
 
 # Domyślny dostawca API (wybierz: "cloudflare", "openai", "anthropic", "gemini", "openrouter")
-DEFAULT_PROVIDER = "openrouter"
+DEFAULT_PROVIDER = "cloudflare"
 
 # Domyślny model AI (używany dla wszystkich dostawców)
-#DEFAULT_MODEL = "workers-ai/@cf/meta/llama-4-scout-17b-16e-instruct"
-DEFAULT_MODEL = "openrouter/free"
+DEFAULT_MODEL = "workers-ai/@cf/nvidia/nemotron-3-120b-a12b"
+#DEFAULT_MODEL = "openrouter/free"
 
 # Progi i limity pamięci (Tokeny)
 # Przybliżona liczba tokenów (1 słowo ~= 1.33 tokena)
-MEMORY_WINDOW_LIMIT = 4000  # Maksymalna liczba tokenów w pamięci zanim zaczniemy ostrzegać
+MEMORY_WINDOW_LIMIT = 2000  # Maksymalna liczba tokenów w pamięci zanim zaczniemy ostrzegać
 MEMORY_SOFT_LIMIT = 3000    # Próg po którym pojawia się ostrzeżenie o dużej ilości danych
 
 # Limity tokenów dla odpowiedzi API

@@ -3,11 +3,12 @@ import sys
 import json
 from env_loader import validate_and_setup
 from client import APIClient
-from config import DEFAULT_PROVIDER, MEMORY_SOFT_LIMIT
+from config import DEFAULT_PROVIDER, MEMORY_SOFT_LIMIT, MEMORY_WINDOW_LIMIT
 from ui import Colors, print_system, print_error
 from file_utils import process_file_mentions
 from executor import handle_agent_commands, reset_terminal_state
 from skills import get_system_prompt_addon
+from compact import compress_if_needed, count_messages_tokens
 
 def print_help():
     print(f"{Colors.CYAN}{Colors.BOLD}=== Lokalny Agent DevOps (AI CLI) ==={Colors.ENDC}")
@@ -17,6 +18,7 @@ def print_help():
     print("\nFunkcje dostępne w trakcie działania chatu:")
     print("  @<ścieżka>    np. @~/.bashrc lub @agent.py - wczytuje zawartość pliku i dołącza ją do zapytania")
     print("  @clear        Czyści pamięć (historię rozmowy) agenta")
+    print("  @compact     Kompresuje historię (zachowuje podsumowania, oszczędza tokeny)")
     print("  exit / quit   Kończy pracę z agentem")
     print("  ?             Podczas pytania o zgodę na polecenie (T/n/?) wysyła prośbę o jego objaśnienie")
     print("  n             Odrzuca komendę proponowaną przez ai i błyskawicznie wraca do oczekiwania na tekst")
@@ -79,8 +81,31 @@ Użytkownik zostanie natychmiast zapytany o interaktywną zgodę na jej wykonani
                     print_system("Pamięć agenta została wyczyszczona.")
                     if not user_input.strip(): # Jeśli wpisano tylko @clear, wracamy do początku pętli
                         continue
+                
+                # Ręczna kompresja historii
+                if 'compact' in commands_triggered:
+                    current_tokens = count_messages_tokens(messages)
+                    messages = compress_if_needed(
+                        messages,
+                        current_tokens - 500,  # Zawsze kompresuj (próg niżej niż aktualne)
+                        MEMORY_WINDOW_LIMIT,
+                        client=client,
+                        verbose=True
+                    )
+                    if not user_input.strip():
+                        continue
 
             messages.append({"role": "user", "content": user_input})
+            
+            # Automatyczna kompresja historii gdy zbliżamy się do limitu
+            messages = compress_if_needed(
+                messages,
+                MEMORY_SOFT_LIMIT,
+                MEMORY_WINDOW_LIMIT,
+                client=client,
+                verbose=True
+            )
+            
             print(f"{Colors.GREEN}🤖 Agent zaciąga dane...{Colors.ENDC}", end="\r")
             
             response = client.chat_completion(messages)
@@ -96,7 +121,12 @@ Użytkownik zostanie natychmiast zapytany o interaktywną zgodę na jej wykonani
                 continue
             
             if "choices" in response and len(response["choices"]) > 0:
-                agent_reply = response["choices"][0]["message"]["content"]
+                agent_reply = response["choices"][0]["message"].get("content")
+                
+                if agent_reply is None:
+                    print_error("Otrzymano pustą odpowiedź od API (content = null).")
+                    messages.pop()
+                    continue
                 
                 print(f"{Colors.GREEN}{Colors.BOLD}🤖 Agent{token_info}:{Colors.ENDC}\n{agent_reply}\n")
                 

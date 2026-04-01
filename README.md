@@ -13,7 +13,8 @@ Lekki agent CLI w Pythonie (bez pip) do bezpiecznej komunikacji z modelami LLM. 
 | `env_loader.py` | Ładowanie `.env` i walidacja |
 | `client.py` | Klient HTTP (urllib) dla OpenAI API |
 | `executor*.py` | Silnik wykonywania komend `<execute>` |
-| `file_utils.py` | Obsługa `@plik` |
+| `file_utils.py` | Obsługa `@plik` i komend `@` |
+| `compact.py` | **Kompresja historii** - auto-podsumowania wiadomości |
 | `ui.py` | Kolory i formatowanie terminala |
 | `skills.py` | System formatowania odpowiedzi |
 
@@ -48,10 +49,12 @@ python3 agent.py
 
 - `@plik` – wczytaj plik do kontekstu (walidacja ścieżki, limit 1MB)
 - `@clear` – wyczyść pamięć agenta
+- `@compact` – skompresuj historię (podsumowania zamiast surowych wiadomości, oszczędza tokeny)
 - `?` – wyjaśnij komendę przed wykonaniem
 - `n` – odmowa wykonania (błyskawiczna)
 - Licznik tokenów: `🤖 Agent (1240t)`
 - Ostrzeżenie o dużej pamięci (próg w `config.py`)
+- **Auto-kompresja** – automatyczne podsumowywanie historii przy zbliżaniu się do limitu tokenów
 
 ## ⚡ Auto-DevOps
 

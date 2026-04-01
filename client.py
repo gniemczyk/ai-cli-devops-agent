@@ -72,8 +72,12 @@ class APIClient:
             # Próba w pełni zabezpieczonego nawiązania połączenia szyfrowanego (domyślna dla np. Debiana)
             with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as response:
                 result = json.loads(response.read().decode("utf-8"))
-                # Dodajemy informację o tokenach do wyniku
-                result["_total_tokens"] = total_tokens
+                # Użyj rzeczywistych tokenów z API jeśli dostępne, inaczej fallback na szacowanie
+                actual_tokens = result.get("usage", {}).get("total_tokens", 0)
+                if actual_tokens > 0:
+                    result["_total_tokens"] = actual_tokens
+                else:
+                    result["_total_tokens"] = total_tokens  # fallback na szacowanie
                 return result
                 
         except socket.timeout:
@@ -101,7 +105,11 @@ class APIClient:
                 try:
                     with urllib.request.urlopen(req, context=ctx, timeout=REQUEST_TIMEOUT) as response:
                         result = json.loads(response.read().decode("utf-8"))
-                        result["_total_tokens"] = total_tokens
+                        actual_tokens = result.get("usage", {}).get("total_tokens", 0)
+                        if actual_tokens > 0:
+                            result["_total_tokens"] = actual_tokens
+                        else:
+                            result["_total_tokens"] = total_tokens
                         return result
                 except socket.timeout:
                     return {"error": f"Przekroczono limit czasu oczekiwania ({REQUEST_TIMEOUT}s). Sprawdź połączenie lub zwiększ REQUEST_TIMEOUT w client.py."}
