@@ -121,7 +121,12 @@ Użytkownik zostanie natychmiast zapytany o interaktywną zgodę na jej wykonani
                 continue
             
             if "choices" in response and len(response["choices"]) > 0:
-                agent_reply = response["choices"][0]["message"]["content"]
+                agent_reply = response["choices"][0]["message"].get("content")
+                
+                if agent_reply is None:
+                    print_error("Otrzymano pustą odpowiedź od API (content = null).")
+                    messages.pop()
+                    continue
                 
                 print(f"{Colors.GREEN}{Colors.BOLD}🤖 Agent{token_info}:{Colors.ENDC}\n{agent_reply}\n")
                 
