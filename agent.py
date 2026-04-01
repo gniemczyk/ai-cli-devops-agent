@@ -16,7 +16,7 @@ def print_help():
     print("\nOpcje argumentów:")
     print("  -h, --help    Wyświetla tę pomoc")
     print("\nFunkcje dostępne w trakcie działania chatu:")
-    print("  @<ścieżka>    np. @~/.bashrc lub @agent.py - wczytuje zawartość pliku i dołącza ją do zapytania")
+    print("  @<ścieżka>    np. @README.md lub @agent.py - wczytuje zawartość pliku i dołącza ją do zapytania")
     print("  @clear        Czyści pamięć (historię rozmowy) agenta")
     print("  @compact     Kompresuje historię (zachowuje podsumowania, oszczędza tokeny)")
     print("  exit / quit   Kończy pracę z agentem")

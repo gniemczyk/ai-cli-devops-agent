@@ -50,9 +50,15 @@ class APIClient:
         else:
             headers["Authorization"] = f"Bearer {self.api_key}"
         
+        cleaned_messages = []
+        for m in messages:
+            cleaned_m = m.copy()
+            cleaned_m.pop("_is_compression_summary", None)
+            cleaned_messages.append(cleaned_m)
+
         data = {
             "model": self.model,
-            "messages": messages,
+            "messages": cleaned_messages,
             "max_tokens": MAX_TOKENS,
             "temperature": TEMPERATURE
         }

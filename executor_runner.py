@@ -81,12 +81,14 @@ def handle_agent_commands(agent_reply, messages, client):
             out_payload = ""  # Inicjalizacja przed try
             try:
                 # Bezpieczniejsze wykonanie komendy bez shell=True
-                # Sprawdź czy komenda zawiera przekierowania lub potoki
+                # Sprawdź czy komenda zawiera przekierowania, potoki lub wywołanie polecenia wbudowanego shella
+                shell_builtins = ['cd', 'source', 'export', 'alias', 'set', 'unset', 'history', 'type']
                 has_shell_chars = any(c in cmd for c in ['|', '&&', '||', '>', '>>', '<', '$(', '`'])
+                is_shell_builtin = cmd.strip().split()[0] in shell_builtins if cmd.strip() else False
                 
-                if has_shell_chars:
-                    # Komenda złożona - wymaga shella, ale z dodatkowym ostrzeżeniem
-                    print(f"{Colors.YELLOW}⚠️ Komenda zawiera potoki/przekierowania - wymaga shell. Dodatkowa ostrożność!{Colors.ENDC}")
+                if has_shell_chars or is_shell_builtin:
+                    # Komenda złożona lub wbudowana - wymaga shella
+                    print(f"{Colors.YELLOW}⚠️ Komenda wymaga powłoki (shell). Dodatkowa ostrożność!{Colors.ENDC}")
                     # Wybierz odpowiedni shell dla systemu
                     if platform.system() == 'Windows':
                         shell_cmd = ['cmd', '/c', cmd]
