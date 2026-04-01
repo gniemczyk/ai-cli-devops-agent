@@ -137,8 +137,8 @@ def compress_messages(
         return messages, original_count, original_count
     
     # Zdecyduj ile par zachować w pełnej formie (ostatnie pary)
-    # Zawsze zachowaj ostatnie 2 pary w oryginalnej formie dla kontekstu
-    keep_full = min(2, len(pairs))
+    # Zmniejszone do 1 dla lepszej kompresji tokenów
+    keep_full = min(1, len(pairs))
     pairs_to_summarize = pairs[:-keep_full] if keep_full > 0 else pairs
     recent_pairs = pairs[-keep_full:] if keep_full > 0 else []
     
@@ -153,11 +153,11 @@ def compress_messages(
     if system_msg:
         compressed.append(system_msg)
     
-    # Dodaj podsumowanie jako jedna wiadomość systemowa
+    # Dodaj podsumowanie jako jedna wiadomość systemowa (krótszy tekst wprowadzający)
     if summaries:
-        summary_text = "📋 Podsumowanie wcześniejszej konwersacji:\n" + "\n".join(
-            f"{i+1}. {s}" for i, s in enumerate(summaries[-10:])  # Max 10 podsumowań
-        )
+        # Ogranicz do 5 ostatnich podsumowań dla kompaktu
+        recent_summaries = summaries[-5:]
+        summary_text = "💾 Historia:\n" + " | ".join(recent_summaries)
         compressed.append({
             "role": "system",
             "content": summary_text,
