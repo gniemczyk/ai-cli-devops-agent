@@ -16,7 +16,7 @@ def print_help():
     print("\nOpcje argumentów:")
     print("  -h, --help    Wyświetla tę pomoc")
     print("\nFunkcje dostępne w trakcie działania chatu:")
-    print("  @<ścieżka>    np. @~/.bashrc lub @agent.py - wczytuje zawartość pliku i dołącza ją do zapytania")
+    print("  @<ścieżka>    np. @README.md lub @agent.py - wczytuje zawartość pliku i dołącza ją do zapytania")
     print("  @clear        Czyści pamięć (historię rozmowy) agenta")
     print("  @compact     Kompresuje historię (zachowuje podsumowania, oszczędza tokeny)")
     print("  exit / quit   Kończy pracę z agentem")
@@ -124,7 +124,11 @@ Użytkownik zostanie natychmiast zapytany o interaktywną zgodę na jej wykonani
                 agent_reply = response["choices"][0]["message"].get("content")
                 
                 if agent_reply is None:
-                    print_error("Otrzymano pustą odpowiedź od API (content = null).")
+                    # Diagnostyka - zaloguj pełną odpowiedź aby zobaczyć co zwraca API
+                    finish_reason = response["choices"][0].get("finish_reason", "brak")
+                    print_error(f"Otrzymano pustą odpowiedź od API (content = null, finish_reason: {finish_reason}).")
+                    print(f"{Colors.YELLOW}Diagnostyka - pełna odpowiedź:{Colors.ENDC}")
+                    print(json.dumps(response, indent=2)[:500] + "..." if len(json.dumps(response)) > 500 else json.dumps(response, indent=2))
                     messages.pop()
                     continue
                 

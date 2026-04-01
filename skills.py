@@ -353,6 +353,7 @@ def get_system_prompt_addon() -> str:
 Używaj poniższych konwencji przy odpowiadaniu:
 
 ### WAŻNE - Format dla terminala:
+- **NIE używaj komendy `cd`** bez łączenia jej z inną komendą (np. `cd folder && polecenie`), ponieważ każda Twoja komenda uruchamiana jest w osobnym podprocesie i samo `cd` nie zadziała na kolejne polecenia!
 - **NIE używaj tabel** (| kolumna |) - w terminalu są nieczytelne!
 - Używaj **kompaktowych list** z wypunktowaniem lub numeracją
 - Maksymalnie 2-3 poziomy zagłębienia (nagłówek → punkt → podpunkt)
