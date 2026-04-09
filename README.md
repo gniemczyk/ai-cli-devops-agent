@@ -6,17 +6,30 @@ Lekki agent CLI w Pythonie (bez pip) do bezpiecznej komunikacji z modelami LLM. 
 
 ## 🛠 Struktura
 
-| Plik | Opis |
-|------|------|
-| `agent.py` | Główny plik wejściowy |
-| `config.py` | Konfiguracja providera/modelu |
-| `env_loader.py` | Ładowanie `.env` i walidacja |
-| `client.py` | Klient HTTP (urllib) dla OpenAI API |
-| `executor*.py` | Silnik wykonywania komend `<execute>` |
-| `file_utils.py` | Obsługa `@plik` i komend `@` |
-| `compact.py` | **Kompresja historii** - auto-podsumowania wiadomości |
-| `ui.py` | Kolory i formatowanie terminala |
-| `skills.py` | System formatowania odpowiedzi |
+```
+/
+├── agent.py              # Główny plik wejściowy (koordynacja modułów)
+├── config.py             # Konfiguracja providera/modelu
+├── core/                 # Moduły podstawowe
+│   ├── client.py         # Klient HTTP (urllib) dla OpenAI API
+│   ├── conversation.py   # Zarządzanie konwersacją i historią
+│   └── response_handler.py  # Obsługa odpowiedzi od API
+├── ui/                   # Interfejs użytkownika
+│   ├── ui.py             # Kolory i formatowanie terminala
+│   └── cli.py            # Obsługa interfejsu wiersza poleceń
+├── utils/                # Narzędzia
+│   ├── env_loader.py     # Ładowanie `.env` i walidacja
+│   ├── file_utils.py     # Obsługa `@plik` i komend `@`
+│   └── compact.py        # Kompresja historii (auto-podsumowania)
+├── executor/             # Silnik wykonywania komend
+│   ├── executor.py       # Główny agregator
+│   ├── executor_runner.py   # Główna logika wykonywania
+│   ├── executor_security.py # Sprawdzanie bezpieczeństwa
+│   ├── executor_output.py    # Obsługa dużych danych wyjściowych
+│   └── executor_terminal.py  # Resetowanie stanu terminala
+└── skills/               # Formatowanie odpowiedzi
+    └── skills.py         # System formatowania odpowiedzi
+```
 
 ## 🎨 Skille Formatowania
 

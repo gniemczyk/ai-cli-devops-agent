@@ -7,7 +7,7 @@ Zastępuje surową historię spójnymi podsumowaniami, oszczędzając tokeny.
 
 import re
 from typing import List, Dict, Any, Tuple
-from ui import Colors, print_system
+from ui.ui import Colors, print_system
 
 
 def estimate_tokens(text: str) -> int:

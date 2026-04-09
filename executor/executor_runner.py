@@ -6,10 +6,10 @@ import sys
 import subprocess
 import shlex
 import platform
-from ui import Colors, print_error
-from executor_terminal import reset_terminal_state
-from executor_security import is_dangerous_command
-from executor_output import handle_large_output
+from ui.ui import Colors, print_error
+from executor.executor_terminal import reset_terminal_state
+from executor.executor_security import is_dangerous_command
+from executor.executor_output import handle_large_output
 
 
 def handle_agent_commands(agent_reply, messages, client):

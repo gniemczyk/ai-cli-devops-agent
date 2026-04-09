@@ -2,8 +2,8 @@
 Moduł obsługi wyjścia - przycinanie i zarządzanie dużymi danymi wyjściowymi.
 """
 import sys
-from ui import Colors
-from executor_terminal import reset_terminal_state
+from ui.ui import Colors
+from executor.executor_terminal import reset_terminal_state
 
 
 def truncate_output(output, max_chars=15000, show_truncation_warning=True):
