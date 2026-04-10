@@ -53,7 +53,7 @@ class CLI:
             # Obsługa @compact
             if 'compact' in commands_triggered:
                 current_tokens = self.conversation.get_token_count()
-                self.conversation.compress(threshold=current_tokens - 500)
+                self.conversation.compress(threshold=max(0, current_tokens - 500))
                 if not user_input.strip():
                     return "", False
         

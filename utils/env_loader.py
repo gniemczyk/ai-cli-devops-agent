@@ -1,5 +1,6 @@
 import os
 import sys
+import copy
 from config import DEFAULT_PROVIDER, PROVIDERS
 
 def load_env(filepath=".env"):
@@ -31,7 +32,7 @@ def validate_and_setup():
     load_env()
     
     # Kopia, żeby nie modyfikować oryginału w config.py (choć i tak go nadpiszemy w locie)
-    active_providers = PROVIDERS.copy()
+    active_providers = copy.deepcopy(PROVIDERS)
     
     # Pobranie danych z środowiska
     cf_token = os.environ.get("CF_API_TOKEN", "")

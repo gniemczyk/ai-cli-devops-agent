@@ -97,7 +97,7 @@ class APIClient:
         except urllib.error.URLError as e:
             # Ten blok aktywuje się gdy system (np Mac) blokuje handshake przez certyfikaty
             if "CERTIFICATE_VERIFY_FAILED" in str(e.reason):
-                from ui import Colors
+                from ui.ui import Colors
                 print(f"\n{Colors.YELLOW}{Colors.BOLD}⚠️ OSTRZEŻENIE: CERTIFICATE_VERIFY_FAILED{Colors.ENDC}")
                 print(f"{Colors.YELLOW}Twój system zablokował dostęp ze względu na brak ważnych certyfikatów.{Colors.ENDC}")
                 print(f"{Colors.YELLOW}Włączono ratunkowe obejście weryfikacji SSL! Z tego powodu Twoje połączenie{Colors.ENDC}")
