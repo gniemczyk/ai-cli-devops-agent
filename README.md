@@ -44,9 +44,14 @@ Agent automatycznie stylizuje odpowiedzi używając:
 # 1. Skopiuj .env.example do .env i wypełnij
 cp .env.example .env
 
-# 2. Uruchom
+# 2. Skopiuj config.example.py do config.py (opcjonalnie - dostosuj providera/model)
+cp config.example.py config.py
+
+# 3. Uruchom
 python3 agent.py
 ```
+
+**Uwaga:** Plik `config.py` jest ignorowany przez git (`config.example.py` jest szablonem). Możesz dowolnie zmieniać providera i model w `config.py` bez wpływu na repozytorium.
 
 ## 🔌 Dostawcy
 
