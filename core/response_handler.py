@@ -56,7 +56,8 @@ class ResponseHandler:
         next_auto_prompt, executed_something = handle_agent_commands(
             agent_reply, 
             self.conversation.get_messages(), 
-            self.client
+            self.client,
+            self.conversation
         )
         
         return True, next_auto_prompt if executed_something else None

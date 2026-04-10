@@ -12,7 +12,7 @@ from executor.executor_security import is_dangerous_command
 from executor.executor_output import handle_large_output
 
 
-def handle_agent_commands(agent_reply, messages, client):
+def handle_agent_commands(agent_reply, messages, client, conversation):
     """
     Sprawdza, czy w odpowiedzi są tagi <execute>.
     Uruchamia interaktywne sprawdzanie i wywołuje polecenie.
@@ -172,8 +172,8 @@ def handle_agent_commands(agent_reply, messages, client):
                     print(out_payload.strip())
                     print(f"{Colors.CYAN}{Colors.BOLD}----------------------------------{Colors.ENDC}")
                     
-                    messages.append({"role": "user", "content": f"Uruchomiono wynik komendy systemowej `{cmd}`:\n```\n{out_payload}\n```\nTylko odnotuj to w pamięci chmurowej, omijając analizę na ekran zaoszczędzimy żądanie."})
-                    messages.append({"role": "assistant", "content": "Zrozumiałem."})
+                    conversation.add_user_message(f"Uruchomiono wynik komendy systemowej `{cmd}`:\n```\n{out_payload}\n```\nTylko odnotuj to w pamięci chmurowej, omijając analizę na ekran zaoszczędzimy żądanie.")
+                    conversation.add_assistant_message("Zrozumiałem.")
                 else:
                     # Opcja N - tylko wyświetl, bez pamięci
                     print(f"\n{Colors.CYAN}{Colors.BOLD}--- WYNIK KOMENDY `{cmd}` ---{Colors.ENDC}")
@@ -188,8 +188,8 @@ def handle_agent_commands(agent_reply, messages, client):
             sys.stdin.flush()
         else:
             print(f"{Colors.YELLOW}❌ Zablokowałeś wykonanie polecenia. Wracam do nasłuchu...{Colors.ENDC}")
-            messages.append({"role": "user", "content": f"[SYSTEM]: Użytkownik odmówił wykonania komendy `{cmd}`. Nie proponuj jej ponownie bez prośby."})
-            messages.append({"role": "assistant", "content": "Zrozumiałem."})
+            conversation.add_user_message(f"[SYSTEM]: Użytkownik odmówił wykonania komendy `{cmd}`. Nie proponuj jej ponownie bez prośby.")
+            conversation.add_assistant_message("Zrozumiałem.")
             auto_prompt = None
         
     return auto_prompt, executed_something
