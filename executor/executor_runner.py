@@ -12,6 +12,35 @@ from executor.executor_security import is_dangerous_command
 from executor.executor_output import handle_large_output
 
 
+def filter_sensitive_data(text):
+    """Filtruje potencjalnie wrażliwe dane z tekstu przed dodaniem do historii."""
+    if not text:
+        return text
+    
+    # Wzorce do filtrowania (API keys, tokens, passwords)
+    sensitive_patterns = [
+        r'(api[_-]?key["\']?\s*[:=]\s*["\']?)[a-zA-Z0-9_\-]{20,}',
+        r'(token["\']?\s*[:=]\s*["\']?)[a-zA-Z0-9_\-]{20,}',
+        r'(password["\']?\s*[:=]\s*["\']?)[^\s\'"]{8,}',
+        r'(secret["\']?\s*[:=]\s*["\']?)[a-zA-Z0-9_\-]{20,}',
+        r'(Bearer\s+)[a-zA-Z0-9_\-]{20,}',
+    ]
+    
+    filtered = text
+    for pattern in sensitive_patterns:
+        filtered = re.sub(pattern, r'\1[REDACTED]', filtered, flags=re.IGNORECASE)
+    
+    return filtered
+
+
+def get_shell_command(cmd):
+    """Zwraca komendę shell dla odpowiedniego systemu operacyjnego."""
+    if platform.system() == 'Windows':
+        return ['cmd', '/c', cmd]
+    else:
+        return ['/bin/bash', '-c', cmd]
+
+
 def handle_agent_commands(agent_reply, messages, client, conversation):
     """
     Sprawdza, czy w odpowiedzi są tagi <execute>.
@@ -82,18 +111,14 @@ def handle_agent_commands(agent_reply, messages, client, conversation):
             try:
                 # Bezpieczniejsze wykonanie komendy bez shell=True
                 # Sprawdź czy komenda zawiera przekierowania, potoki lub wywołanie polecenia wbudowanego shella
-                shell_builtins = ['cd', 'source', 'export', 'alias', 'set', 'unset', 'history', 'type']
+                shell_builtins = ['cd', 'source', 'export', 'alias', 'set', 'unset', 'history', 'type', 'echo', 'printf', 'test', '[', 'read', 'shift', 'exit', 'return', 'local', 'declare', 'let', 'eval']
                 has_shell_chars = any(c in cmd for c in ['|', '&&', '||', '>', '>>', '<', '$(', '`'])
                 is_shell_builtin = cmd.strip().split()[0] in shell_builtins if cmd.strip() else False
                 
                 if has_shell_chars or is_shell_builtin:
                     # Komenda złożona lub wbudowana - wymaga shella
                     print(f"{Colors.YELLOW}⚠️ Komenda wymaga powłoki (shell). Dodatkowa ostrożność!{Colors.ENDC}")
-                    # Wybierz odpowiedni shell dla systemu
-                    if platform.system() == 'Windows':
-                        shell_cmd = ['cmd', '/c', cmd]
-                    else:
-                        shell_cmd = ['/bin/bash', '-c', cmd]
+                    shell_cmd = get_shell_command(cmd)
                     res = subprocess.run(
                         shell_cmd,
                         stdout=subprocess.PIPE, 
@@ -115,11 +140,13 @@ def handle_agent_commands(agent_reply, messages, client, conversation):
                     except ValueError as e:
                         # Jeśli shlex.split nie radzi sobie z komendą, użyj shella jako fallback
                         print(f"{Colors.YELLOW}⚠️ Komenda wymaga shell: {e}{Colors.ENDC}")
-                        # Wybierz odpowiedni shell dla systemu
-                        if platform.system() == 'Windows':
-                            shell_cmd = ['cmd', '/c', cmd]
-                        else:
-                            shell_cmd = ['/bin/bash', '-c', cmd]
+                        reset_terminal_state()
+                        choice = input(f"{Colors.YELLOW}Wykonać przez shell? (T/n): {Colors.ENDC}").strip().lower()
+                        if choice not in ['', 't', 'y', 'tak', 'yes']:
+                            print(f"{Colors.YELLOW}❌ Odmówiono wykonania komendy przez shell.{Colors.ENDC}")
+                            out_payload = f"[Komenda '{cmd}' wymaga shell ale użytkownik odmówił wykonania.]"
+                            raise Exception("Użytkownik odmówił wykonania przez shell")
+                        shell_cmd = get_shell_command(cmd)
                         res = subprocess.run(
                             shell_cmd,
                             stdout=subprocess.PIPE, 
@@ -147,7 +174,8 @@ def handle_agent_commands(agent_reply, messages, client, conversation):
                 print(f"{Colors.YELLOW}⏱️  Polecenie przekroczyło limit {timeout_sec}s i zostało zatrzymane.{Colors.ENDC}")
             except FileNotFoundError as e:
                 # Komenda nie istnieje w systemie (np. journalctl na macOS)
-                out_payload = f"[BŁĄD: Komenda '{cmd.split()[0]}' nie została znaleziona w systemie. Może wymagać instalacji lub jest niedostępna na tej platformie.]"
+                cmd_name = cmd.split()[0] if cmd.strip() else cmd
+                out_payload = f"[BŁĄD: Komenda '{cmd_name}' nie została znaleziona w systemie. Może wymagać instalacji lub jest niedostępna na tej platformie.]"
                 print(f"{Colors.RED}❌ Komenda nie istnieje: {e}{Colors.ENDC}")
             except Exception as e:
                 print(f"{Colors.RED}Błąd API Pythona uderzający poleceniem: {e}{Colors.ENDC}")
@@ -172,7 +200,8 @@ def handle_agent_commands(agent_reply, messages, client, conversation):
                     print(out_payload.strip())
                     print(f"{Colors.CYAN}{Colors.BOLD}----------------------------------{Colors.ENDC}")
                     
-                    conversation.add_user_message(f"Uruchomiono wynik komendy systemowej `{cmd}`:\n```\n{out_payload}\n```\nTylko odnotuj to w pamięci chmurowej, omijając analizę na ekran zaoszczędzimy żądanie.")
+                    filtered_output = filter_sensitive_data(out_payload)
+                    conversation.add_user_message(f"Uruchomiono wynik komendy systemowej `{cmd}`:\n```\n{filtered_output}\n```\nTylko odnotuj to w pamięci chmurowej, omijając analizę na ekran zaoszczędzimy żądanie.")
                     conversation.add_assistant_message("Zrozumiałem.")
                 else:
                     # Opcja N - tylko wyświetl, bez pamięci

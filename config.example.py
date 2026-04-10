@@ -1,4 +1,5 @@
 import os
+from core.system_prompt import SYSTEM_PROMPT
 
 # ==============================================================================
 # 1. KONFIGURACJA UŻYTKOWNIKA (Tu wprowadzaj swoje zmiany)

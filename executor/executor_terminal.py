@@ -27,11 +27,13 @@ def reset_terminal_state():
             new_settings = termios.tcgetattr(fd)
             new_settings[3] = new_settings[3] | termios.ICANON | termios.ECHO
             termios.tcsetattr(fd, termios.TCSADRAIN, new_settings)
-    except:
-        pass  # Ignoruj błędy na macOS/Windows
+    except (OSError, termios.error, AttributeError) as e:
+        # Ignoruj błędy na macOS/Windows lub gdy stdin nie jest terminalem
+        pass
     
     # Ostateczność - uruchom stty sane (tylko Unix)
     try:
         subprocess.run(['stty', 'sane'], stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr, timeout=1)
-    except:
+    except (OSError, subprocess.TimeoutExpired, FileNotFoundError):
+        # Ignoruj błędy - stty może nie być dostępne na wszystkich systemach
         pass

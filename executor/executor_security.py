@@ -6,9 +6,9 @@ import re
 
 def is_dangerous_command(cmd):
     """Sprawdza czy komenda odnosi się do ścieżek/operacji uznanych za groźne."""
-    # Ścieżki systemowe
+    # Ścieżki systemowe (bez ~ - to katalog domowy użytkownika)
     dangerous_paths = [
-        '/etc', '/usr', '/bin', '/sbin', '/var', '/proc', '/sys', '/dev', '/root', '~'
+        '/etc', '/usr', '/bin', '/sbin', '/var', '/proc', '/sys', '/dev', '/root'
     ]
     
     cmd_lower = cmd.lower()
@@ -26,13 +26,17 @@ def is_dangerous_command(cmd):
             return True
             
     # Potencjalnie groźne modyfikatory plików poza projektem
-    if 'rm ' in cmd_lower or 'chmod ' in cmd_lower or 'chown ' in cmd_lower:
-        return True
+    # Sprawdzamy czy komenda zaczyna się od tych słów (jako osobny token)
+    dangerous_modifiers = ['rm ', 'chmod ', 'chown ']
+    for mod in dangerous_modifiers:
+        pattern = rf"(^|\s){re.escape(mod.strip())}($|[\s/])"
+        if re.search(pattern, cmd_lower):
+            return True
         
     # Rozszerzona lista niebezpiecznych komend
     dangerous_commands = [
         # Modyfikatory plików/systemu
-        'rm ', 'chmod ', 'chown ', 'dd', 'mkfs', 'fdisk', 'parted',
+        'dd', 'mkfs', 'fdisk', 'parted',
         # Zarządzanie systemem
         'shutdown', 'reboot', 'halt', 'poweroff', 'systemctl',
         # Procesy

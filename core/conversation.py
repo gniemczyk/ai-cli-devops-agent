@@ -4,6 +4,7 @@
 from skills.skills import get_system_prompt_addon
 from utils.compact import compress_if_needed, count_messages_tokens
 from config import MEMORY_SOFT_LIMIT, MEMORY_WINDOW_LIMIT
+from core.system_prompt import SYSTEM_PROMPT
 
 
 class Conversation:
@@ -16,14 +17,10 @@ class Conversation:
     
     def _initialize_messages(self):
         """Inicjalizuje messages z system prompt."""
-        base_prompt = """Jesteś asystentem DevOps o potężnych możliwościach. ODPOWIADAJ ZWIĘŹLE I BEZPOŚREDNIO - nie generuj wewnętrznych monologów ani łańcuchów rozumowania. Jeśli chcesz pozyskać informacje o systemie operacyjnym (np. uruchomić 'docker ps', 'ps aux', 'ls -la'), wygeneruj komendę ujętą dokładnie w specjalne tagi XML: <execute>TWOJA_KOMENDA</execute>.
-
-Użytkownik zostanie natychmiast zapytany o interaktywną zgodę na jej wykonanie. Gdy wyrazi zgodę, komenda zostaje wykonana ukradkiem w tle, a TY zaraz potem otrzymasz od systemu wynik tekstowy tej komendy - wtedy dokonasz dogłębnej analizy dla użytkownika! Wydawaj maksymalnie jedną komendę w okienku."""
-        
         skills_prompt = get_system_prompt_addon()
         
         return [
-            {"role": "system", "content": base_prompt + "\n" + skills_prompt}
+            {"role": "system", "content": SYSTEM_PROMPT + "\n" + skills_prompt}
         ]
     
     def add_user_message(self, content):
@@ -42,6 +39,9 @@ Użytkownik zostanie natychmiast zapytany o interaktywną zgodę na jej wykonani
         """Kompresuje historię jeśli przekroczono próg."""
         if threshold is None:
             threshold = MEMORY_SOFT_LIMIT
+        
+        if threshold < 0:
+            raise ValueError(f"Próg kompresji musi być nieujemny, otrzymano: {threshold}")
         
         self.messages = compress_if_needed(
             self.messages,

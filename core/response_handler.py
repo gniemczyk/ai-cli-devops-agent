@@ -23,7 +23,8 @@ class ResponseHandler:
         """
         if "error" in response:
             print_error(response["error"])
-            self.conversation.remove_last_message()
+            if len(self.conversation.messages) > 0:
+                self.conversation.remove_last_message()
             return False, None
         
         if "choices" not in response or len(response["choices"]) == 0:

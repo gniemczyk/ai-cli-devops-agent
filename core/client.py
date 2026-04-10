@@ -3,6 +3,7 @@ import urllib.request
 import urllib.error
 import socket
 from config import PROVIDERS, MEMORY_WINDOW_LIMIT, MEMORY_SOFT_LIMIT, MAX_TOKENS, TEMPERATURE
+from utils.compact import estimate_tokens
 
 # Maksymalny czas oczekiwania na odpowiedź API (w sekundach)
 REQUEST_TIMEOUT = 30
@@ -26,12 +27,11 @@ class APIClient:
         self.model = model_name
 
     def estimate_tokens(self, messages):
-        """Przybliżone liczenie tokenów (1 słowo ~= 1.33 tokena)."""
+        """Przybliżone liczenie tokenów przy użyciu wspólnej metody z utils.compact."""
         text = ""
         for m in messages:
             text += m.get("content", "") + " "
-        words = len(text.split())
-        return int(words * 1.33)
+        return estimate_tokens(text)
 
     def chat_completion(self, messages):
         """Wysyła zapytanie do API wybranego providera."""
