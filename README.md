@@ -82,6 +82,32 @@ Agent może wykonywać komendy systemowe przez `<execute>komenda</execute>`:
 - **Timeout:** 10s limit na komendę
 - **Bezpieczeństwo:** sprawdzanie niebezpiecznych komend i ścieżek
 
+## 🧪 Testy
+
+Projekt zawiera zestaw testów jednostkowych dla głównych modułów.
+
+**Uruchomienie testów:**
+```bash
+# Zainstaluj zależności testowe
+pip install -r requirements.txt
+
+# Uruchom wszystkie testy
+pytest tests/ -v
+
+# Uruchom konkretny plik testowy
+pytest tests/test_conversation.py -v
+
+# Uruchom z pokryciem kodu
+pytest tests/ --cov=. --cov-report=html
+```
+
+**Struktura testów:**
+- `test_conversation.py` - testy zarządzania konwersacją
+- `test_executor_security.py` - testy bezpieczeństwa executora
+- `test_utils_compact.py` - testy kompresji historii
+- `test_utils_file_utils.py` - testy narzędzi plikowych
+- `test_utils_env_loader.py` - testy ładowania zmiennych środowiskowych
+
 ## 🔧 SSL (jeśli wymagane)
 
 **macOS:**
