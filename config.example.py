@@ -1,4 +1,5 @@
 import os
+from core.system_prompt import SYSTEM_PROMPT
 
 # ==============================================================================
 # 1. KONFIGURACJA UŻYTKOWNIKA (Tu wprowadzaj swoje zmiany)
@@ -8,8 +9,7 @@ import os
 DEFAULT_PROVIDER = "cloudflare"
 
 # Domyślny model AI (używany dla wszystkich dostawców)
-DEFAULT_MODEL = "workers-ai/@cf/nvidia/nemotron-3-120b-a12b"
-#DEFAULT_MODEL = "openrouter/free"
+DEFAULT_MODEL = "workers-ai/@cf/google/gemma-4-26b-a4b-it"
 
 # Progi i limity pamięci (Tokeny)
 # Przybliżona liczba tokenów (1 słowo ~= 1.33 tokena)
@@ -17,7 +17,7 @@ MEMORY_WINDOW_LIMIT = 2000  # Maksymalna liczba tokenów w pamięci zanim zaczni
 MEMORY_SOFT_LIMIT = 3000    # Próg po którym pojawia się ostrzeżenie o dużej ilości danych
 
 # Limity tokenów dla odpowiedzi API
-MAX_TOKENS = 1024           # Maksymalna liczba tokenów w odpowiedzi modelu
+MAX_TOKENS = 4096           # Maksymalna liczba tokenów w odpowiedzi modelu
 TEMPERATURE = 0.2           # Temperatura modelu (0.0-1.0, niższa = bardziej zwięzłe odpowiedzi)
 
 # Słownik dostawców

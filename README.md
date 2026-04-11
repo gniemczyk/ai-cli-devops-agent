@@ -6,17 +6,30 @@ Lekki agent CLI w Pythonie (bez pip) do bezpiecznej komunikacji z modelami LLM. 
 
 ## 🛠 Struktura
 
-| Plik | Opis |
-|------|------|
-| `agent.py` | Główny plik wejściowy |
-| `config.py` | Konfiguracja providera/modelu |
-| `env_loader.py` | Ładowanie `.env` i walidacja |
-| `client.py` | Klient HTTP (urllib) dla OpenAI API |
-| `executor*.py` | Silnik wykonywania komend `<execute>` |
-| `file_utils.py` | Obsługa `@plik` i komend `@` |
-| `compact.py` | **Kompresja historii** - auto-podsumowania wiadomości |
-| `ui.py` | Kolory i formatowanie terminala |
-| `skills.py` | System formatowania odpowiedzi |
+```
+/
+├── agent.py              # Główny plik wejściowy (koordynacja modułów)
+├── config.py             # Konfiguracja providera/modelu
+├── core/                 # Moduły podstawowe
+│   ├── client.py         # Klient HTTP (urllib) dla OpenAI API
+│   ├── conversation.py   # Zarządzanie konwersacją i historią
+│   └── response_handler.py  # Obsługa odpowiedzi od API
+├── ui/                   # Interfejs użytkownika
+│   ├── ui.py             # Kolory i formatowanie terminala
+│   └── cli.py            # Obsługa interfejsu wiersza poleceń
+├── utils/                # Narzędzia
+│   ├── env_loader.py     # Ładowanie `.env` i walidacja
+│   ├── file_utils.py     # Obsługa `@plik` i komend `@`
+│   └── compact.py        # Kompresja historii (auto-podsumowania)
+├── executor/             # Silnik wykonywania komend
+│   ├── executor.py       # Główny agregator
+│   ├── executor_runner.py   # Główna logika wykonywania
+│   ├── executor_security.py # Sprawdzanie bezpieczeństwa
+│   ├── executor_output.py    # Obsługa dużych danych wyjściowych
+│   └── executor_terminal.py  # Resetowanie stanu terminala
+└── skills/               # Formatowanie odpowiedzi
+    └── skills.py         # System formatowania odpowiedzi
+```
 
 ## 🎨 Skille Formatowania
 
@@ -31,9 +44,14 @@ Agent automatycznie stylizuje odpowiedzi używając:
 # 1. Skopiuj .env.example do .env i wypełnij
 cp .env.example .env
 
-# 2. Uruchom
+# 2. Skopiuj config.example.py do config.py (opcjonalnie - dostosuj providera/model)
+cp config.example.py config.py
+
+# 3. Uruchom
 python3 agent.py
 ```
+
+**Uwaga:** Plik `config.py` jest ignorowany przez git (`config.example.py` jest szablonem). Możesz dowolnie zmieniać providera i model w `config.py` bez wpływu na repozytorium.
 
 ## 🔌 Dostawcy
 
@@ -63,6 +81,32 @@ Agent może wykonywać komendy systemowe przez `<execute>komenda</execute>`:
 - **Duże wyjście:** opcje T/P/O/N/S (przycięcie, pierwsze/ostatnie 50 linii, zapis do pliku)
 - **Timeout:** 10s limit na komendę
 - **Bezpieczeństwo:** sprawdzanie niebezpiecznych komend i ścieżek
+
+## 🧪 Testy
+
+Projekt zawiera zestaw testów jednostkowych dla głównych modułów.
+
+**Uruchomienie testów:**
+```bash
+# Zainstaluj zależności testowe
+pip install -r requirements.txt
+
+# Uruchom wszystkie testy
+pytest tests/ -v
+
+# Uruchom konkretny plik testowy
+pytest tests/test_conversation.py -v
+
+# Uruchom z pokryciem kodu
+pytest tests/ --cov=. --cov-report=html
+```
+
+**Struktura testów:**
+- `test_conversation.py` - testy zarządzania konwersacją
+- `test_executor_security.py` - testy bezpieczeństwa executora
+- `test_utils_compact.py` - testy kompresji historii
+- `test_utils_file_utils.py` - testy narzędzi plikowych
+- `test_utils_env_loader.py` - testy ładowania zmiennych środowiskowych
 
 ## 🔧 SSL (jeśli wymagane)
 

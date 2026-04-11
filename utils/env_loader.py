@@ -1,12 +1,13 @@
 import os
 import sys
+import copy
 from config import DEFAULT_PROVIDER, PROVIDERS
 
 def load_env(filepath=".env"):
     """Ładuje zmienne środowiskowe z pliku tekstowego (bez zewnętrznych bibliotek)."""
     try:
         # Znajdź .env w katalogu głównym projektu
-        base_dir = os.path.dirname(os.path.abspath(__file__))
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         env_path = os.path.join(base_dir, filepath)
         
         if not os.path.exists(env_path):
@@ -31,7 +32,7 @@ def validate_and_setup():
     load_env()
     
     # Kopia, żeby nie modyfikować oryginału w config.py (choć i tak go nadpiszemy w locie)
-    active_providers = PROVIDERS.copy()
+    active_providers = copy.deepcopy(PROVIDERS)
     
     # Pobranie danych z środowiska
     cf_token = os.environ.get("CF_API_TOKEN", "")

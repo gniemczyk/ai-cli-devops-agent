@@ -12,7 +12,7 @@ Struktura modułów:
 """
 
 # Backward compatibility - eksportujemy główne funkcje
-from executor_terminal import reset_terminal_state
-from executor_runner import handle_agent_commands
+from executor.executor_terminal import reset_terminal_state
+from executor.executor_runner import handle_agent_commands
 
 __all__ = ['handle_agent_commands', 'reset_terminal_state']
