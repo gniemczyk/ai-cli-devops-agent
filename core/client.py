@@ -11,7 +11,6 @@ REQUEST_TIMEOUT = 30
 class APIClient:
     def __init__(self, provider_name="cloudflare", providers_config=None):
         if providers_config is None:
-            from config import PROVIDERS
             providers_config = PROVIDERS
 
         if provider_name not in providers_config:

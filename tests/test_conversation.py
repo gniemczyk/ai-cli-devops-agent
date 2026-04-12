@@ -79,14 +79,14 @@ class TestConversation(unittest.TestCase):
         self.assertEqual(self.conversation.messages[-1]["role"], "user")
 
     def test_remove_last_message_empty(self):
-        """Test usuwania ostatniej wiadomości gdy historia jest pusta."""
+        """Test usuwania ostatniej wiadomości gdy została tylko system message."""
         self.conversation.messages = [self.conversation.system_message]
         initial_count = len(self.conversation.messages)
         
         self.conversation.remove_last_message()
         
-        # Gdy usuniemy ostatnią wiadomość, historia będzie pusta
-        self.assertEqual(len(self.conversation.messages), initial_count - 1)
+        # System message nie powinien zostać usunięty (ochrona przed pustą historią)
+        self.assertEqual(len(self.conversation.messages), initial_count)
 
     def test_compress_negative_threshold(self):
         """Test kompresji z ujemnym progiem."""

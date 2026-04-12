@@ -13,9 +13,9 @@ def is_dangerous_command(cmd):
     
     cmd_lower = cmd.lower()
     
-    # Sprawdź path traversal - tylko w ścieżkach (poprzedzone spacją, / lub na początku)
-    # Wyklucza false positive dla np. "echo '..'" lub "git log --oneline"
-    if re.search(r'(?:^|\s|/|\'|")\.\.(?:$|[\s/\'"])', cmd):
+    # Sprawdź path traversal - tylko gdy .. jest osobnym tokenem (ścieżka lub argument)
+    # Wyklucza false positive dla np. "echo '...'" (trzy kropki) lub "git log --oneline"
+    if re.search(r'(?:^|\s|/|\'|")\.\.(?:$|/|\s|\'|")', cmd):
         return True
         
     for path in dangerous_paths:
@@ -25,18 +25,10 @@ def is_dangerous_command(cmd):
         if re.search(pattern, cmd_lower):
             return True
             
-    # Potencjalnie groźne modyfikatory plików poza projektem
-    # Sprawdzamy czy komenda zaczyna się od tych słów (jako osobny token)
-    dangerous_modifiers = ['rm ', 'chmod ', 'chown ']
-    for mod in dangerous_modifiers:
-        pattern = rf"(^|\s){re.escape(mod.strip())}($|[\s/])"
-        if re.search(pattern, cmd_lower):
-            return True
-        
     # Rozszerzona lista niebezpiecznych komend
     dangerous_commands = [
         # Modyfikatory plików/systemu
-        'dd', 'mkfs', 'fdisk', 'parted',
+        'rm ', 'chmod ', 'chown ', 'dd', 'mkfs', 'fdisk', 'parted',
         # Zarządzanie systemem
         'shutdown', 'reboot', 'halt', 'poweroff', 'systemctl',
         # Procesy
@@ -62,9 +54,12 @@ def is_dangerous_command(cmd):
     for dangerous in dangerous_commands:
         # Zabezpieczenie przed substringami (np. 'at' w 'cat')
         # Używamy regex, aby sprawdzić czy komenda występuje jako osobny token
-        # Wyjątek dla operatorów przekierowań i potoków
+        # Wyjątek dla operatorów przekierowań i potoków - sprawdzamy poza cudzysłowami
         if dangerous in ['>', '>>', '|', '&&', '||']:
-            if dangerous in cmd_lower:
+            # Usuń zawartość cudzysłowów przed sprawdzeniem
+            cmd_no_quotes = re.sub(r'"[^"]*"', '', cmd_lower)
+            cmd_no_quotes = re.sub(r"'[^']*'", '', cmd_no_quotes)
+            if dangerous in cmd_no_quotes:
                 return True
             continue
             

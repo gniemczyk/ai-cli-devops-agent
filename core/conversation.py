@@ -60,6 +60,6 @@ class Conversation:
         return self.messages.copy()
     
     def remove_last_message(self):
-        """Usuwa ostatnią wiadomość z historii."""
-        if self.messages:
+        """Usuwa ostatnią wiadomość z historii (z wyjątkiem system message)."""
+        if len(self.messages) > 1:
             self.messages.pop()
