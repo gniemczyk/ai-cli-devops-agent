@@ -6,7 +6,6 @@ aby Agent prezentował wyniki w czytelny i profesjonalny sposób.
 """
 
 from typing import List, Dict, Any, Optional
-import re
 
 
 class FormatSkill:
