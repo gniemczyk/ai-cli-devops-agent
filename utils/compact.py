@@ -12,44 +12,38 @@ from ui.ui import Colors, print_system
 
 def estimate_tokens(text: str) -> int:
     """
-    Bardziej dokładne szacowanie tokenów dla modeli LLM.
-    
-    Heurystyka:
-    - Tekst angielski: ~4 znaki na token
-    - Kod/techniczny: ~3 znaki na token (więcej symboli)
-    - Spacje/newlines: osobne tokeny
-    - Unicode/non-ASCII: często 2-3 tokeny na znak
+    Bardziej dokładne szacowanie tokenów dla modeli LLM (heurystyka pod kod).
     """
     if not text:
         return 0
     
-    # Zliczaj znaki
-    total_chars = len(text)
+    # 1. Liczba słów (zwykły tekst)
+    words = len(re.findall(r'\w+', text))
     
-    # Zliczaj znaki specjalne (kod techniczny)
-    special_chars = sum(1 for c in text if c in '[]{}()<>/\\|=-+*&^%$#@!;:\'"`')
+    # 2. Znaki specjalne (symbole w kodzie często są osobnymi tokenami)
+    # Wykluczamy znaki, które są częścią słów (\w)
+    special_chars = len(re.findall(r'[^\w\s]', text))
     
-    # Zliczaj whitespace (każdy to potencjalnie token)
-    whitespace = sum(1 for c in text if c in ' \t\n')
+    # 3. Wcięcia i białe znaki
+    # Grupy spacji (standardowo 4 lub 2) są często jednym tokenem
+    spaces = len(re.findall(r' {2,4}', text))
+    # Pojedyncze nowe linie / tabulatory
+    other_whitespace = len(re.findall(r'[\n\t]', text))
     
-    # Zliczaj non-ASCII
+    # 4. Znaki non-ASCII (Unicode) - często 2-3 tokeny na znak
     non_ascii = sum(1 for c in text if ord(c) > 127)
     
-    # Algorytm wagowy
-    # Baza: ~3.5 znaku na token dla tekstu technicznego
-    base_estimate = total_chars / 3.5
+    # Heurystyka wagowa:
+    # - Słowa: ~0.75 tokena na słowo (większość słów to 1-2 tokeny)
+    # - Znaki specjalne: ~1.0 tokena (w kodzie prawie każdy symbol to token)
+    # - Wcięcia (2-4 spacje): ~1.0 tokena
+    # - Newlines/Tabs: ~1.0 tokena
+    # - Non-ASCII: dodatkowe 1.5 tokena na znak
     
-    # Korekty
-    special_boost = special_chars * 0.3  # Symbole często osobne tokeny
-    whitespace_boost = whitespace * 0.2    # Whitespace to tokeny
-    non_ascii_boost = non_ascii * 1.0    # Non-ASCII = więcej tokenów
+    tokens = (words * 0.8) + (special_chars * 1.0) + (spaces * 1.0) + (other_whitespace * 1.0) + (non_ascii * 1.5)
     
-    estimated = base_estimate + special_boost + whitespace_boost + non_ascii_boost
-    
-    # Dodaj padding dla systemu formatowania/markdown
-    estimated *= 1.1
-    
-    return int(estimated)
+    # Zawsze zaokrąglaj w górę i dodaj 5% marginesu błędu
+    return int(tokens * 1.05) + 1
 
 
 def count_messages_tokens(messages: List[Dict[str, Any]]) -> int:

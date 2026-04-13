@@ -49,18 +49,27 @@ class APIClient:
         else:
             headers["Authorization"] = f"Bearer {self.api_key}"
         
-        cleaned_messages = []
+        final_messages = []
+        system_prompt = None
+
         for m in messages:
             cleaned_m = m.copy()
             cleaned_m.pop("_is_compression_summary", None)
-            cleaned_messages.append(cleaned_m)
+            
+            if self.provider == "anthropic" and cleaned_m.get("role") == "system":
+                system_prompt = cleaned_m.get("content")
+            else:
+                final_messages.append(cleaned_m)
 
         data = {
             "model": self.model,
-            "messages": cleaned_messages,
+            "messages": final_messages,
             "max_tokens": MAX_TOKENS,
             "temperature": TEMPERATURE
         }
+        
+        if self.provider == "anthropic" and system_prompt:
+            data["system"] = system_prompt
         
         # Parametr reasoning tylko dla OpenRouter (modele reasoning jak nemotron)
         if self.provider == "openrouter":

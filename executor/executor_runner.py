@@ -112,7 +112,7 @@ def handle_agent_commands(agent_reply, messages, client, conversation):
                 # Bezpieczniejsze wykonanie komendy bez shell=True
                 # Sprawdź czy komenda zawiera przekierowania, potoki lub wywołanie polecenia wbudowanego shella
                 shell_builtins = ['cd', 'source', 'export', 'alias', 'set', 'unset', 'history', 'type', 'echo', 'printf', 'test', '[', 'read', 'shift', 'exit', 'return', 'local', 'declare', 'let', 'eval']
-                has_shell_chars = any(c in cmd for c in ['|', '&&', '||', '>', '>>', '<', '$(', '`'])
+                has_shell_chars = any(c in cmd for c in ['|', '&&', '||', '>', '>>', '<', '$(', '`', '*', '?', '[', ']', '{', '}', ';', '~', '\\', '$'])
                 stripped_cmd = cmd.strip()
                 is_shell_builtin = stripped_cmd.split()[0] in shell_builtins if stripped_cmd and stripped_cmd.split() else False
                 
