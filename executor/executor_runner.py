@@ -113,7 +113,8 @@ def handle_agent_commands(agent_reply, messages, client, conversation):
                 # Sprawdź czy komenda zawiera przekierowania, potoki lub wywołanie polecenia wbudowanego shella
                 shell_builtins = ['cd', 'source', 'export', 'alias', 'set', 'unset', 'history', 'type', 'echo', 'printf', 'test', '[', 'read', 'shift', 'exit', 'return', 'local', 'declare', 'let', 'eval']
                 has_shell_chars = any(c in cmd for c in ['|', '&&', '||', '>', '>>', '<', '$(', '`'])
-                is_shell_builtin = cmd.strip().split()[0] in shell_builtins if cmd.strip() else False
+                stripped_cmd = cmd.strip()
+                is_shell_builtin = stripped_cmd.split()[0] in shell_builtins if stripped_cmd and stripped_cmd.split() else False
                 
                 if has_shell_chars or is_shell_builtin:
                     # Komenda złożona lub wbudowana - wymaga shella
@@ -214,7 +215,10 @@ def handle_agent_commands(agent_reply, messages, client, conversation):
 
             # Reset stanu terminala po wykonaniu komendy systemowej
             reset_terminal_state()
-            sys.stdin.flush()
+            try:
+                sys.stdin.flush()
+            except (AttributeError, OSError):
+                pass  # Windows lub inne systemy mogą nie wspierać flush na stdin
         else:
             print(f"{Colors.YELLOW}❌ Zablokowałeś wykonanie polecenia. Wracam do nasłuchu...{Colors.ENDC}")
             conversation.add_user_message(f"[SYSTEM]: Użytkownik odmówił wykonania komendy `{cmd}`. Nie proponuj jej ponownie bez prośby.")
